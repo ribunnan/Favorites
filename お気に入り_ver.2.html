@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>お気に入りリンク（ログイン付き完全版）</title>
+  <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+  <style>
+    :root {
+      --bg-color: #121212;
+      --text-color: #e0e0e0;
+      --card-bg: #1e1e1e;
+      --hover-bg: #333333;
+      --button-bg: #444;
+      --input-bg: #1e1e1e;
+    }
+    .light-theme {
+      --bg-color: #f0f0f0;
+      --text-color: #222;
+      --card-bg: #ffffff;
+      --hover-bg: #e0e0e0;
+      --button-bg: #ccc;
+      --input-bg: #ffffff;
+    }
+    body {
+      background-color: var(--bg-color);
+      color: var(--text-color);
+      font-family: 'Roboto', sans-serif;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+    }
+    #theme-toggle {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      background: none;
+      border: none;
+      font-size: 1.5em;
+      cursor: pointer;
+      color: var(--text-color);
+    }
+    #logout-btn {
+      position: absolute;
+      top: 20px;
+      left: 20px;
+      background: none;
+      border: none;
+      font-size: 1.1em;
+      color: var(--text-color);
+      cursor: pointer;
+    }
+    .container {
+      max-width: 900px;
+      padding: 20px;
+      width: 100%;
+    }
+    h1 {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    .form {
+      margin-bottom: 20px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+    .form input {
+      padding: 8px;
+      border: none;
+      border-radius: 5px;
+      background-color: var(--input-bg);
+      color: var(--text-color);
+    }
+    .form button {
+      padding: 8px;
+      border: none;
+      border-radius: 5px;
+      background-color: var(--button-bg);
+      color: var(--text-color);
+      cursor: pointer;
+    }
+    .group-title {
+      font-size: 1.2em;
+      margin-bottom: 10px;
+      cursor: pointer;
+    }
+    .links {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 15px;
+    }
+    .link-card {
+      background-color: var(--card-bg);
+      padding: 15px;
+      border-radius: 10px;
+      min-width: 200px;
+      cursor: pointer;
+      position: relative;
+      transition: background-color 0.2s ease;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+    }
+    .link-card:hover {
+      background-color: var(--hover-bg);
+    }
+    .delete-btn {
+      position: absolute;
+      top: 6px;
+      right: 6px;
+      background-color: var(--button-bg);
+      border: none;
+      color: var(--text-color);
+      border-radius: 50%;
+      width: 22px;
+      height: 22px;
+      font-size: 14px;
+      line-height: 22px;
+      text-align: center;
+      cursor: pointer;
+    }
+    .delete-btn:hover {
+      background-color: #e74c3c;
+      color: #fff;
+    }
+    .favicon {
+      width: 16px;
+      height: 16px;
+      margin-right: 6px;
+      vertical-align: middle;
+    }
+    .note {
+      font-size: 0.85em;
+      color: #888;
+      margin-top: 5px;
+      font-style: italic;
+    }
+    mark {
+      background: yellow;
+      color: black;
+      padding: 0 2px;
+      border-radius: 2px;
+    }
+    #login-screen {
+      position: fixed;
+      inset: 0;
+      background: var(--bg-color);
+      color: var(--text-color);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      flex-direction: column;
+      z-index: 9999;
+    }
+  </style>
+</head>
+<body>
+  <div id="login-screen">
+    <h2 style="margin-bottom: 1rem;">🔒 パスワードを入力してください</h2>
+    <input id="password-input" type="password" placeholder="パスワード" style="padding: 10px; font-size: 1em; border-radius: 5px; border: none; background-color: var(--input-bg); color: var(--text-color);">
+    <button onclick="checkPassword()" style="margin-top: 1rem; padding: 10px 20px; background-color: var(--button-bg); color: var(--text-color); border: none; border-radius: 5px; cursor: pointer;">ログイン</button>
+    <p id="login-error" style="color: red; margin-top: 10px; display: none;">パスワードが間違っています</p>
+  </div>
+
+  <button id="logout-btn" onclick="logout()">🔓 ログアウト</button>
+  <button id="theme-toggle" onclick="toggleTheme()">🌙</button>
+  <div class="container">
+    <h1>お気に入りリンク</h1>
+    <div class="form">
+      <input type="text" id="search-box" placeholder="リンクを検索">
+      <button onclick="filterLinks()">検索</button>
+      <input type="text" id="link-name" placeholder="名前">
+      <input type="url" id="link-url" placeholder="URL">
+      <input type="text" id="link-note" placeholder="メモ">
+      <input type="text" id="link-group" placeholder="グループ">
+      <button onclick="addLink()">追加</button>
+      <button onclick="exportLinks()">📤 エクスポート</button>
+      <button onclick="document.getElementById('import-input').click()">📥 インポート</button>
+      <input type="file" id="import-input" accept="application/json" style="display:none" onchange="importLinks(event)">
+    </div>
+    <div id="groups"></div>
+  </div>
+  <script>
+    const PASSWORD = '1234';
+    function checkPassword() {
+      const input = document.getElementById('password-input').value;
+      const error = document.getElementById('login-error');
+      if (input === PASSWORD) {
+        sessionStorage.setItem('unlocked', 'yes');
+        document.getElementById('login-screen').style.display = 'none';
+      } else {
+        error.style.display = 'block';
+      }
+    }
+    function logout() {
+      sessionStorage.removeItem('unlocked');
+      location.reload();
+    }
+    if (sessionStorage.getItem('unlocked') === 'yes') {
+      document.getElementById('login-screen').style.display = 'none';
+    }
+
+    const defaultIcon = 'https://www.google.com/s2/favicons?domain=example.com';
+    let linksByGroup = JSON.parse(localStorage.getItem('favLinks') || '{}');
+
+    function saveLinks() {
+      localStorage.setItem('favLinks', JSON.stringify(linksByGroup));
+    }
+    function exportLinks() {
+      const data = JSON.stringify(linksByGroup, null, 2);
+      const blob = new Blob([data], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'お気に入り_links.json';
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+    function importLinks(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        try {
+          const imported = JSON.parse(e.target.result);
+          if (typeof imported === 'object') {
+            linksByGroup = imported;
+            saveLinks();
+            render();
+          } else {
+            alert('無効な形式です');
+          }
+        } catch (err) {
+          alert('読み込みに失敗しました');
+        }
+      };
+      reader.readAsText(file);
+    }
+    function render() {
+      const groupsEl = document.getElementById('groups');
+      groupsEl.innerHTML = '';
+      for (const [group, links] of Object.entries(linksByGroup)) {
+        const section = document.createElement('div');
+        const title = document.createElement('div');
+        title.className = 'group-title';
+        title.textContent = `📁 ${group}`;
+        const container = document.createElement('div');
+        container.className = 'links';
+        title.addEventListener('click', () => {
+          container.style.display = container.style.display === 'none' ? 'flex' : 'none';
+        });
+        links.forEach((link, index) => {
+          const card = document.createElement('div');
+          card.className = 'link-card';
+          const icon = `https://www.google.com/s2/favicons?domain=${new URL(link.url).hostname}`;
+          card.innerHTML = `
+            <img src="${icon}" class="favicon" onerror="this.src='${defaultIcon}'">
+            <strong>${link.name}</strong>
+            <div class="note">${link.note || ''}</div>
+            <button class="delete-btn" onclick="event.stopPropagation(); deleteLink('${group}', ${index})">✕</button>
+          `;
+          card.addEventListener('click', () => window.open(link.url, '_blank'));
+          container.appendChild(card);
+        });
+        section.appendChild(title);
+        section.appendChild(container);
+        groupsEl.appendChild(section);
+        new Sortable(container, {
+          animation: 150,
+          onEnd: () => saveOrder(group, container)
+        });
+      }
+    }
+    function addLink() {
+      const name = document.getElementById('link-name').value.trim();
+      let url = document.getElementById('link-url').value.trim();
+      const note = document.getElementById('link-note').value.trim();
+      const group = document.getElementById('link-group').value.trim() || '未分類';
+      if (!name || !url) return alert('名前とURLを入力してください');
+      if (!url.startsWith('http')) url = 'https://' + url;
+      linksByGroup[group] = linksByGroup[group] || [];
+      linksByGroup[group].push({ name, url, note });
+      saveLinks();
+      render();
+      ['link-name', 'link-url', 'link-note', 'link-group'].forEach(id => document.getElementById(id).value = '');
+    }
+    function deleteLink(group, index) {
+      if (confirm('このリンクを削除しますか？')) {
+        linksByGroup[group].splice(index, 1);
+        if (linksByGroup[group].length === 0) delete linksByGroup[group];
+        saveLinks();
+        render();
+      }
+    }
+    function filterLinks() {
+      const keyword = document.getElementById('search-box').value.trim().toLowerCase();
+      const cards = document.querySelectorAll('.link-card');
+      cards.forEach(card => {
+        const nameEl = card.querySelector('strong');
+        const noteEl = card.querySelector('.note');
+        const name = nameEl.textContent;
+        const note = noteEl?.textContent || '';
+        const nameMatch = name.toLowerCase().includes(keyword);
+        const noteMatch = note.toLowerCase().includes(keyword);
+        if (nameMatch || noteMatch || keyword === '') {
+          card.style.display = '';
+          nameEl.innerHTML = keyword ? name.replace(new RegExp(`(${keyword})`, 'gi'), '<mark>$1</mark>') : name;
+          if (noteEl) noteEl.innerHTML = keyword ? note.replace(new RegExp(`(${keyword})`, 'gi'), '<mark>$1</mark>') : note;
+        } else {
+          card.style.display = 'none';
+        }
+      });
+    }
+    function toggleTheme() {
+      const isLight = document.body.classList.toggle('light-theme');
+      localStorage.setItem('theme', isLight ? 'light' : 'dark');
+      document.getElementById('theme-toggle').textContent = isLight ? '☀️' : '🌙';
+    }
+    function loadTheme() {
+      const saved = localStorage.getItem('theme');
+      if (saved === 'light') {
+        document.body.classList.add('light-theme');
+        document.getElementById('theme-toggle').textContent = '☀️';
+      }
+    }
+    function saveOrder(group, container) {
+      const cards = container.querySelectorAll('.link-card');
+      linksByGroup[group] = Array.from(cards).map(card => {
+        const name = card.querySelector('strong').textContent.replace(/<[^>]*>/g, '');
+        const note = card.querySelector('.note').textContent.replace(/<[^>]*>/g, '');
+        const url = linksByGroup[group].find(l => l.name === name)?.url || '#';
+        return { name, url, note };
+      });
+      saveLinks();
+    }
+    document.getElementById('search-box').addEventListener('input', filterLinks);
+    loadTheme();
+    render();
+  </script>
+</body>
+</html>
