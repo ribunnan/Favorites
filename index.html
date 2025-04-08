@@ -4,17 +4,16 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>リンク集</title>
-  <!-- 引入 Google Fonts -->
+  <!-- Google Fonts -->
   <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
   
   <!-- Firebase SDK（compat 版） -->
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-  <!-- 如有需要认证功能，可以引入 Authentication -->
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
   
   <script>
-    // Firebase の設定（あなたの Firebase コンソールからの設定）
+    // Firebase の設定（Firebase コンソールからコピー）
     var firebaseConfig = {
       apiKey: "AIzaSyCDlSoBXuNOEQOPIvx1metUAPctqt6xcFs",
       authDomain: "mylinkcollection-abe80.firebaseapp.com",
@@ -25,8 +24,9 @@
     };
     // Firebase を初期化
     firebase.initializeApp(firebaseConfig);
-    // Firestore インスタンスの取得
+    // Firestore と Authentication のインスタンスを取得
     const db = firebase.firestore();
+    const auth = firebase.auth();
   </script>
   
   <style>
@@ -110,7 +110,7 @@
       border-color: var(--btn-bg);
       outline: none;
     }
-    /* ツールバーのボタン順序：リンク追加、データエクスポート、データインポート、テーマ切替、ログアウト、（管理ボタン） */
+    /* ボタンの順序：リンク追加、データエクスポート、データインポート、テーマ切替、ログアウト、（管理ボタン） */
     .toolbar button {
       height: 44px;
       padding: 0 15px;
@@ -434,7 +434,7 @@
   </div>
   <!-- モーダルオーバーレイ -->
   <div id="modalOverlay" style="display:none;"></div>
-
+  
   <!-- メインページ -->
   <div class="container" id="mainContent">
     <h1>リンク集</h1>
@@ -452,7 +452,7 @@
     <!-- リンクリスト -->
     <div id="linksList"></div>
   </div>
-
+  
   <!-- リンク追加モーダル -->
   <div id="addLinkModal" style="display:none;">
     <h2>新規リンク追加</h2>
@@ -464,7 +464,7 @@
       <button class="btn-add" onclick="submitNewLink()">送信</button>
     </div>
   </div>
-
+  
   <!-- 管理者モーダル -->
   <div id="adminModal" style="display:none;">
     <h2>ユーザー管理</h2>
@@ -487,21 +487,19 @@
     </div>
   </div>
   
-  <!-- Firebase SDK, Firestore なども上部で読み込んでいます -->
-  
   <!-- 引入 Sortable.js -->
   <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
-  
   <script>
-    /* =========== ユーザー登録とログイン機能（ローカルストレージを使用） =========== */
-    // ユーザーデータを取得または初期化（形式：{ username: { password: "...", links: [...], lastLogin: "..." } }）
+    /* =========== ユーザー登録とログイン機能（Firebase Authentication を使用しない簡易実装） =========== */
+    // ※ 本サンプルでは認証は Firebase Authentication ではなく、従来の localStorage を使っています。
+    // ※ 完全にクラウドに移行する場合は、Firebase Authentication を利用してください。
+    
     function getUsers() {
       return JSON.parse(localStorage.getItem("users") || "{}");
     }
     function setUsers(users) {
       localStorage.setItem("users", JSON.stringify(users));
     }
-    // 現在のログインユーザー名を取得
     function getCurrentUser() {
       return localStorage.getItem("currentUser");
     }
@@ -511,7 +509,7 @@
     function removeCurrentUser() {
       localStorage.removeItem("currentUser");
     }
-    // 管理者アカウント（liwennan, 64664644）が存在することを確認
+    // 管理者アカウントの存在確認
     function ensureAdminAccount() {
       let users = getUsers();
       if (!users["liwennan"]) {
@@ -521,7 +519,6 @@
     }
     ensureAdminAccount();
     
-    // ページ読み込み時の処理
     window.onload = function() {
       if (!getCurrentUser()) {
         openAuthModal();
@@ -537,7 +534,6 @@
       }
     };
     
-    // 認証モーダルの表示／非表示
     function openAuthModal() {
       document.getElementById("authModal").style.display = "block";
       document.getElementById("modalOverlay").style.display = "block";
@@ -556,7 +552,6 @@
       document.getElementById("loginForm").style.display = "block";
     }
     
-    // ログイン処理
     function login() {
       const username = document.getElementById("loginUsername").value.trim();
       const password = document.getElementById("loginPassword").value;
@@ -582,7 +577,6 @@
       }
     }
     
-    // 登録処理
     function register() {
       const username = document.getElementById("registerUsername").value.trim();
       const password = document.getElementById("registerPassword").value;
@@ -613,7 +607,6 @@
       }
     }
     
-    // ログアウト
     function logout() {
       removeCurrentUser();
       links = [];
@@ -622,11 +615,9 @@
       document.getElementById("mainContent").style.display = "none";
     }
     
-    /* =========== Firebase Firestore を用いたクラウド同期 =========== */
-    // グローバル変数 links（Firestore から読み込んだデータを格納、各要素にドキュメントIDを含む）
-    let links = [];
+    /* =========== Firebase Firestore を使ったクラウド同期（リンクデータ） =========== */
+    let links = []; // Firestore から読み込むリンクデータ
     
-    // 現在のユーザーのリンクデータを Firestore から読み込む
     function loadUserLinks() {
       const currentUser = getCurrentUser();
       db.collection("users").doc(currentUser).collection("links")
@@ -643,7 +634,6 @@
         });
     }
     
-    // リンク追加：Firestore に新規ドキュメントとして追加する
     function addLinkToFirestore(linkData) {
       const currentUser = getCurrentUser();
       db.collection("users").doc(currentUser).collection("links")
@@ -657,7 +647,6 @@
         });
     }
     
-    // リンク更新：Firestore ドキュメントを更新する
     function updateLinkInFirestore(linkId, linkData) {
       const currentUser = getCurrentUser();
       db.collection("users").doc(currentUser).collection("links").doc(linkId)
@@ -670,7 +659,6 @@
         });
     }
     
-    // リンク削除：Firestore からドキュメントを削除する
     function deleteLinkFromFirestore(linkId) {
       const currentUser = getCurrentUser();
       db.collection("users").doc(currentUser).collection("links").doc(linkId)
@@ -684,8 +672,16 @@
     }
     
     /* =========== リンク操作（表示、編集、追加、削除） =========== */
+    function getFaviconUrl(linkUrl) {
+      try {
+        const urlObj = new URL(linkUrl);
+        return 'https://www.google.com/s2/favicons?sz=64&domain_url=' + urlObj.hostname;
+      } catch (e) {
+        return '';
+      }
+    }
+    const fallbackIcon = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32'%3E%3Crect width='32' height='32' fill='%23cccccc' rx='4'/%3E%3Ctext x='16' y='21' font-size='10' text-anchor='middle' fill='%23666666'%3ENo Icon%3C/text%3E%3C/svg%3E";
     
-    // リンクカードを作成する
     function createLinkCard(link, index) {
       const card = document.createElement('div');
       card.className = 'link-card';
@@ -749,7 +745,6 @@
       return card;
     }
     
-    // 編集モードに入る
     function enterEditMode(card, link, index) {
       card.innerHTML = '';
       const editContainer = document.createElement('div');
@@ -799,7 +794,6 @@
       card.appendChild(cancelButton);
     }
     
-    // リンクリストを描画する
     function renderLinks(filteredLinks = null) {
       const listContainer = document.getElementById('linksList');
       listContainer.innerHTML = '';
@@ -808,19 +802,16 @@
         const card = createLinkCard(link, index);
         listContainer.appendChild(card);
       });
-      // Sortable を利用してドラッグアンドドロップによる順序変更（オプション）
       if (!document.getElementById('searchInput').value.trim()) {
         new Sortable(listContainer, {
           animation: 150,
           onEnd: function(evt) {
-            // ソート後、FireStore上の順序を更新する場合は各リンクに順序フィールドを保存するなど、別途実装が必要です
             loadUserLinks();
           }
         });
       }
     }
     
-    // モーダル操作：リンク追加
     function openAddModal() {
       document.getElementById('modalOverlay').style.display = 'block';
       document.getElementById('addLinkModal').style.display = 'block';
@@ -841,7 +832,6 @@
         alert("すべての情報を入力してください！");
         return;
       }
-      // 重複リンクの検出（URL または名前が同じ場合、大小文字を区別しない）
       const duplicate = links.find(l => l.url.toLowerCase() === url.toLowerCase() || l.name.toLowerCase() === name.toLowerCase());
       if (duplicate) {
         if (confirm("重複したリンクが検出されました。既存のリンク情報と統合して更新しますか？")) {
@@ -853,12 +843,10 @@
           return;
         }
       } else {
-        // 新規追加
         addLinkToFirestore({ name: name, url: url, tags: tags });
       }
     }
     
-    // 検索機能：リンク名、URL、タグで検索
     document.getElementById('searchInput').addEventListener('input', function() {
       const query = this.value.trim().toLowerCase();
       const filtered = links.filter(link => {
@@ -870,7 +858,6 @@
       renderLinks(filtered);
     });
     
-    // データエクスポート：現在のユーザーのリンクデータをエクスポート
     function exportLinks() {
       const dataStr = JSON.stringify(links, null, 2);
       const blob = new Blob([dataStr], { type: "application/json" });
@@ -882,7 +869,6 @@
       URL.revokeObjectURL(url);
     }
     
-    // データインポート：インポートされたデータで現在のユーザーのリンクを置換
     document.getElementById('importInput').addEventListener('change', function(event) {
       const file = event.target.files[0];
       const reader = new FileReader();
@@ -891,7 +877,6 @@
           const importedLinks = JSON.parse(e.target.result);
           if (Array.isArray(importedLinks)) {
             const currentUser = getCurrentUser();
-            // まず Firestore の既存リンクを全削除してから新規追加するか、統合処理を行います
             db.collection("users").doc(currentUser).collection("links").get()
               .then(querySnapshot => {
                 const batch = db.batch();
@@ -901,7 +886,6 @@
                 return batch.commit();
               })
               .then(() => {
-                // インポートされたリンクを追加
                 const promises = importedLinks.map(linkData => {
                   return db.collection("users").doc(currentUser).collection("links").add(linkData);
                 });
@@ -925,7 +909,6 @@
     });
     
     /* =========== 管理者機能 =========== */
-    // 管理者モーダルの操作
     function openAdminModal() {
       renderAdminData();
       document.getElementById('modalOverlay').style.display = 'block';
@@ -935,7 +918,6 @@
       document.getElementById('modalOverlay').style.display = 'none';
       document.getElementById('adminModal').style.display = 'none';
     }
-    // 全ユーザー情報のレンダリング（localStorage の "users" から取得）
     function renderAdminData() {
       let adminTable = document.getElementById('adminTable');
       if (!adminTable) return;
@@ -949,29 +931,21 @@
       for (let username in users) {
         const user = users[username];
         const row = document.createElement("tr");
-        
-        // ユーザー名（編集可能）
         const usernameCell = document.createElement("td");
         const usernameInput = document.createElement("input");
         usernameInput.value = username;
         usernameInput.style.width = "100%";
         usernameCell.appendChild(usernameInput);
         row.appendChild(usernameCell);
-        
-        // パスワード（編集可能）
         const passwordCell = document.createElement("td");
         const passwordInput = document.createElement("input");
         passwordInput.value = user.password;
         passwordInput.style.width = "100%";
         passwordCell.appendChild(passwordInput);
         row.appendChild(passwordCell);
-        
-        // 最終ログイン
         const loginTimeCell = document.createElement("td");
         loginTimeCell.textContent = user.lastLogin || "";
         row.appendChild(loginTimeCell);
-        
-        // 操作
         const actionCell = document.createElement("td");
         const saveBtn = document.createElement("button");
         saveBtn.textContent = "保存";
@@ -1001,12 +975,10 @@
         };
         actionCell.appendChild(saveBtn);
         row.appendChild(actionCell);
-        
         adminTableBody.appendChild(row);
       }
     }
     
-    // 全ユーザーのリンクデータをダウンロード
     function downloadAllUserLinks() {
       const users = getUsers();
       const dataStr = JSON.stringify(users, null, 2);
