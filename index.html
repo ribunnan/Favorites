@@ -485,15 +485,15 @@
     };
     // 初始化 Firebase
     firebase.initializeApp(firebaseConfig);
-    // 设置持久化认证，以保证用户退出后依旧使用同一个账户
+    // 设置持久化认证，保证用同一账号登录
     firebase.auth().setPersistence(firebase.auth.Auth.Persistence.LOCAL);
     const db = firebase.firestore();
     const auth = firebase.auth();
     
     // 定义全局变量
     let links = []; // 当前用户的链接数组
-    // 使用一个好看的默认图标（来自 Wikimedia Commons 链接图标）
-    const fallbackIcon = "https://upload.wikimedia.org/wikipedia/commons/thumb/8/88/OOjs_UI_icon_link.svg/32px-OOjs_UI_icon_link.svg.png";
+    // 使用 IE 图标作为默认 favicon（来自 Wikimedia Commons）
+    const fallbackIcon = "https://upload.wikimedia.org/wikipedia/commons/thumb/3/35/Internet_Explorer_9_icon.svg/32px-Internet_Explorer_9_icon.svg.png";
     
     // 显示/隐藏操作等待的 Spinner
     function showOpSpinner() {
