@@ -127,7 +127,7 @@
       margin: 30px 0;
     }
     
-    /* リンクカード */
+    /* 链接卡片 */
     .link-card {
       background-color: var(--container-bg);
       border: 1px solid var(--border-color);
@@ -177,21 +177,26 @@
       margin-right: 6px;
       margin-bottom: 4px;
     }
-    .btn {
+    
+    /* 统一按钮样式 */
+    .btn, .btn-add {
       padding: 10px 16px;
       border: none;
-      border-radius: 6px;
-      background-color: var(--border-color);
-      color: var(--text-color);
+      border-radius: 4px;
+      background-color: var(--btn-bg);
+      color: #fff;
       cursor: pointer;
       transition: background-color 0.3s, transform 0.2s;
-      margin-top: 10px;
       font-size: 14px;
+      margin: 5px 0;
     }
-    .btn:hover {
+    .btn:hover, .btn-add:hover {
       background-color: var(--btn-bg-hover);
-      color: #fff;
       transform: translateY(-2px);
+    }
+    /* 链接编辑按钮额外右边距 */
+    .link-btn {
+      margin-right: 8px;
     }
     
     .edit-container {
@@ -235,10 +240,10 @@
       margin-top: 0;
       margin-bottom: 20px;
     }
-    /* 将按钮放在同一行，间距较小 */
+    /* 登录/注册按钮容器：右对齐 */
     .modal-btns-row {
       display: flex;
-      justify-content: center;
+      justify-content: flex-end;
       gap: 8px;
       margin-top: 10px;
     }
@@ -284,25 +289,16 @@
       margin-left: 10px;
       padding: 10px 16px;
       border: none;
-      border-radius: 6px;
+      border-radius: 4px;
       cursor: pointer;
       transition: background-color 0.3s, transform 0.2s;
       font-size: 14px;
     }
     #addLinkModal .modal-btns .btn {
-      background-color: var(--border-color);
-      color: var(--text-color);
-    }
-    #addLinkModal .modal-btns .btn:hover {
-      background-color: var(--btn-bg-hover);
-      color: #fff;
-      transform: translateY(-2px);
-    }
-    #addLinkModal .modal-btns .btn-add {
       background-color: var(--btn-bg);
       color: #fff;
     }
-    #addLinkModal .modal-btns .btn-add:hover {
+    #addLinkModal .modal-btns .btn:hover {
       background-color: var(--btn-bg-hover);
       transform: translateY(-2px);
     }
@@ -341,7 +337,7 @@
       text-align: left;
       font-size: 14px;
       line-height: 1.4;
-      white-space: pre-wrap; /* 保持换行 */
+      white-space: pre-wrap;
     }
     #adminModal th {
       background-color: var(--btn-bg);
@@ -355,25 +351,16 @@
       margin-left: 10px;
       padding: 10px 16px;
       border: none;
-      border-radius: 6px;
+      border-radius: 4px;
       cursor: pointer;
       transition: background-color 0.3s, transform 0.2s;
       font-size: 14px;
     }
     #adminModal .modal-btns .btn {
-      background-color: var(--border-color);
-      color: var(--text-color);
-    }
-    #adminModal .modal-btns .btn:hover {
-      background-color: var(--btn-bg-hover);
-      color: #fff;
-      transform: translateY(-2px);
-    }
-    #adminModal .modal-btns .btn-add {
       background-color: var(--btn-bg);
       color: #fff;
     }
-    #adminModal .modal-btns .btn-add:hover {
+    #adminModal .modal-btns .btn:hover {
       background-color: var(--btn-bg-hover);
       transform: translateY(-2px);
     }
@@ -730,7 +717,8 @@
       
       const editButton = document.createElement('button');
       editButton.textContent = '編集';
-      editButton.className = 'btn';
+      // 添加统一样式及右边距
+      editButton.className = 'btn link-btn';
       editButton.onclick = function() {
         enterEditMode(card, link, index);
       };
