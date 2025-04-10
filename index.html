@@ -365,7 +365,7 @@
       transform: translateY(-2px);
     }
     
-    /* 登录等待的旋转动画样式 */
+    /* 登录等待的旋转动画样式（登录和其他操作共用） */
     .spinner {
       border: 4px solid rgba(0, 0, 0, 0.1);
       width: 24px;
@@ -378,7 +378,6 @@
     @keyframes spin {
       to { transform: rotate(360deg); }
     }
-    
   </style>
 </head>
 <body>
@@ -467,6 +466,9 @@
       <button class="btn" onclick="closeAdminModal()">閉じる</button>
     </div>
   </div>
+
+  <!-- 操作等待 Spinner（全局） -->
+  <div id="opSpinner" class="spinner" style="display:none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index:2300;"></div>
   
   <!-- 引入 Sortable.js -->
   <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
@@ -488,8 +490,17 @@
     
     // 定义全局变量
     let links = []; // 当前用户的链接数组
-    const fallbackIcon = 'https://via.placeholder.com/32';
-
+    // 使用一个好看的默认图标（链接图标）
+    const fallbackIcon = "https://upload.wikimedia.org/wikipedia/commons/thumb/8/88/OOjs_UI_icon_link.svg/32px-OOjs_UI_icon_link.svg.png";
+    
+    // 显示/隐藏操作等待的 Spinner
+    function showOpSpinner() {
+      document.getElementById('opSpinner').style.display = 'block';
+    }
+    function hideOpSpinner() {
+      document.getElementById('opSpinner').style.display = 'none';
+    }
+    
     // 获取 favicon 的函数
     function getFaviconUrl(url) {
       try {
@@ -503,13 +514,11 @@
     // 认证状态监听器（自动根据登录状态显示或隐藏相应界面）
     auth.onAuthStateChanged(async (user) => {
       if (user) {
-        // 登录成功，更新用户资料（包括最后登录时间）
         await updateUserProfile(user);
         loadUserLinks();
         document.getElementById("authModal").style.display = "none";
         document.getElementById("modalOverlay").style.display = "none";
         document.getElementById("mainContent").style.display = "block";
-        // 判断是否为管理员，管理员邮箱例如 "ribunnan@ribunnan.com"
         const userDoc = await db.collection("users").doc(user.uid).get();
         const userData = userDoc.data();
         if (userData && userData.isAdmin) {
@@ -518,15 +527,14 @@
           document.getElementById("adminBtn").style.display = "none";
         }
       } else {
-        // 未登录，显示认证模态框、隐藏主内容
         document.getElementById("mainContent").style.display = "none";
         openAuthModal();
       }
     });
-
-    // 更新或创建用户资料（存于 Firestore 的 "users" 集合），设置 lastLogin 与 isAdmin 标记
+    
+    // 更新或创建用户资料
     async function updateUserProfile(user) {
-      const isAdmin = (user.email === "ribunnan@ribunnan.com"); // 可根据需要修改管理员邮箱
+      const isAdmin = (user.email === "ribunnan@ribunnan.com");
       const userData = {
         email: user.email,
         lastLogin: new Date().toISOString(),
@@ -536,14 +544,11 @@
     }
     
     // ======= 登录/注册 =======
-    // 显示认证模态框
     function openAuthModal() {
       document.getElementById("authModal").style.display = "block";
       document.getElementById("modalOverlay").style.display = "block";
-      // 默认显示登录表单
       switchToLogin();
     }
-    
     function switchToRegister() {
       document.getElementById("loginForm").style.display = "none";
       document.getElementById("registerForm").style.display = "block";
@@ -553,7 +558,6 @@
       document.getElementById("loginForm").style.display = "block";
     }
     
-    // 登录处理（增加等待转动动画）
     function login() {
       const email = document.getElementById("loginUsername").value.trim();
       const password = document.getElementById("loginPassword").value;
@@ -578,7 +582,6 @@
         });
     }
     
-    // 注册处理
     function register() {
       const email = document.getElementById("registerUsername").value.trim();
       const password = document.getElementById("registerPassword").value;
@@ -593,14 +596,13 @@
       }
       auth.createUserWithEmailAndPassword(email, password)
         .then((userCredential) => {
-          // 注册成功后，onAuthStateChanged 会自动处理界面切换
+          // 自动切换
         })
         .catch((error) => {
           alert("登録エラー: " + error.message);
         });
     }
     
-    // 退出登录时加入确认弹窗
     function confirmLogout() {
       if (confirm("本当にログアウトしてもよろしいですか？")) {
         logout();
@@ -612,17 +614,19 @@
       });
     }
     
-    // ======= 链接数据操作（Firestore存储） =======
-    // 加载当前登录用户的链接（位于 Firestore 的 users/{uid}/links）
+    // ======= 链接数据操作（Firestore） =======
+    // 加载当前登录用户的链接，按 order 排序
     function loadUserLinks() {
       const user = auth.currentUser;
       if (!user) return;
-      db.collection("users").doc(user.uid).collection("links")
+      db.collection("users").doc(user.uid).collection("links").orderBy('order')
         .get()
         .then((querySnapshot) => {
           links = [];
           querySnapshot.forEach((doc) => {
-            links.push({ id: doc.id, ...doc.data() });
+            let data = doc.data();
+            data.id = doc.id;
+            links.push(data);
           });
           renderLinks();
         })
@@ -631,45 +635,55 @@
         });
     }
     
-    // 新增链接：将新链接添加到 Firestore
+    // 新增链接，设定 order 字段为当前时间戳（保证排序）
     function addLinkToFirestore(linkData) {
       const user = auth.currentUser;
       if (!user) return;
+      linkData.order = Date.now();
+      showOpSpinner();
       db.collection("users").doc(user.uid).collection("links")
         .add(linkData)
         .then(() => {
+          hideOpSpinner();
           loadUserLinks();
           closeAddModal();
         })
         .catch((error) => {
+          hideOpSpinner();
           alert("リンクの追加に失敗しました: " + error.message);
         });
     }
     
-    // 更新链接（修改 Firestore 文档）
+    // 更新链接并显示操作等待动画
     function updateLinkInFirestore(linkId, linkData) {
       const user = auth.currentUser;
       if (!user) return;
+      showOpSpinner();
       db.collection("users").doc(user.uid).collection("links").doc(linkId)
         .update(linkData)
         .then(() => {
+          hideOpSpinner();
           loadUserLinks();
         })
         .catch((error) => {
+          hideOpSpinner();
           alert("リンクの更新に失敗しました: " + error.message);
         });
     }
     
-    // 删除链接（从 Firestore 删除文档）
+    // 删除链接时显示等待动画
     function deleteLinkFromFirestore(linkId) {
       const user = auth.currentUser;
       if (!user) return;
+      showOpSpinner();
       db.collection("users").doc(user.uid).collection("links").doc(linkId)
         .delete()
         .then(() => {
+          hideOpSpinner();
           loadUserLinks();
         })
         .catch((error) => {
+          hideOpSpinner();
           alert("リンクの削除に失敗しました: " + error.message);
         });
     }
@@ -678,7 +692,8 @@
     function createLinkCard(link, index) {
       const card = document.createElement('div');
       card.className = 'link-card';
-      card.setAttribute('data-index', index);
+      // 保存链接的 ID到 data-id 属性，用于排序更新
+      card.setAttribute('data-id', link.id);
       
       const header = document.createElement('div');
       header.className = 'link-header';
@@ -717,7 +732,6 @@
       
       const editButton = document.createElement('button');
       editButton.textContent = '編集';
-      // 添加统一样式及右边距
       editButton.className = 'btn link-btn';
       editButton.onclick = function() {
         enterEditMode(card, link, index);
@@ -797,19 +811,34 @@
         const card = createLinkCard(link, index);
         listContainer.appendChild(card);
       });
-      // 使用 Sortable.js 实现拖拽排序（仅当没有搜索时启用）
+      // 使用 Sortable.js，实现拖拽排序（仅当没有搜索时启用）
       if (!document.getElementById('searchInput').value.trim()) {
         new Sortable(listContainer, {
           animation: 150,
           onEnd: function(evt) {
-            loadUserLinks();
+            const cards = listContainer.children;
+            const user = auth.currentUser;
+            if (!user) return;
+            showOpSpinner();
+            const batch = db.batch();
+            for (let i = 0; i < cards.length; i++) {
+              const docId = cards[i].getAttribute('data-id');
+              const docRef = db.collection("users").doc(user.uid).collection("links").doc(docId);
+              batch.update(docRef, { order: i });
+            }
+            batch.commit().then(() => {
+              hideOpSpinner();
+              loadUserLinks();
+            }).catch(error => {
+              hideOpSpinner();
+              alert("順序更新エラー: " + error.message);
+            });
           }
         });
       }
     }
     
     // ======= 模态框操作 =======
-    // 链接新增模态框
     function openAddModal() {
       document.getElementById('modalOverlay').style.display = 'block';
       document.getElementById('addLinkModal').style.display = 'block';
@@ -830,7 +859,6 @@
         alert("すべての情報を入力してください！");
         return;
       }
-      // 检查重复（忽略大小写）
       const duplicate = links.find(l => l.url.toLowerCase() === url.toLowerCase() || l.name.toLowerCase() === name.toLowerCase());
       if (duplicate) {
         if (confirm("重複したリンクが検出されました。既存のリンク情報と統合して更新しますか？")) {
@@ -846,7 +874,6 @@
       }
     }
     
-    // 搜索功能：根据链接名称、URL、标签进行搜索
     document.getElementById('searchInput').addEventListener('input', function() {
       const query = this.value.trim().toLowerCase();
       const filtered = links.filter(link => {
@@ -858,7 +885,6 @@
       renderLinks(filtered);
     });
     
-    // 数据导出：导出当前用户的链接数据
     function exportLinks() {
       const dataStr = JSON.stringify(links, null, 2);
       const blob = new Blob([dataStr], { type: "application/json" });
@@ -870,7 +896,6 @@
       URL.revokeObjectURL(url);
     }
     
-    // 数据导入：导入链接数据到 Firestore（先删除当前用户所有链接再新增）
     document.getElementById('importInput').addEventListener('change', function(event) {
       const file = event.target.files[0];
       const reader = new FileReader();
@@ -912,7 +937,6 @@
     });
     
     // ======= 管理者功能 =======
-    // 打开管理员模态框，查询 Firestore 中所有用户信息，并增加修改邮箱、删除账号功能
     async function openAdminModal() {
       await renderAdminData();
       document.getElementById('modalOverlay').style.display = 'block';
@@ -922,7 +946,6 @@
       document.getElementById('modalOverlay').style.display = 'none';
       document.getElementById('adminModal').style.display = 'none';
     }
-    // 辅助函数：格式化最后登录时间，格式为 yyyy/mm/dd 换行 hh:mm:ss（24 小时制）
     function formatLoginTime(isoString) {
       const date = new Date(isoString);
       if (isNaN(date.getTime())) return "";
@@ -934,7 +957,6 @@
       const ss = String(date.getSeconds()).padStart(2, '0');
       return `${yyyy}/${mm}/${dd}\n${hh}:${min}:${ss}`;
     }
-    // 渲染管理员面板中的用户数据（从 Firestore 的 "users" 集合），同时增加操作按钮
     async function renderAdminData() {
       const adminTable = document.getElementById('adminTable');
       const adminTableBody = adminTable.getElementsByTagName('tbody')[0];
@@ -944,23 +966,18 @@
         querySnapshot.forEach(doc => {
           const userData = doc.data();
           const row = document.createElement("tr");
-          // 显示 UID
           const uidCell = document.createElement("td");
           uidCell.textContent = doc.id;
           row.appendChild(uidCell);
-          // 显示 Email
           const emailCell = document.createElement("td");
           emailCell.textContent = userData.email || "";
           row.appendChild(emailCell);
-          // 显示最后登录时间：格式 yyyy/mm/dd 换行 hh:mm:ss
           const loginTimeCell = document.createElement("td");
           loginTimeCell.textContent = formatLoginTime(userData.lastLogin || "");
           row.appendChild(loginTimeCell);
-          // 显示是否为管理员
           const adminCell = document.createElement("td");
           adminCell.textContent = userData.isAdmin ? "是" : "否";
           row.appendChild(adminCell);
-          // 添加操作按钮：修改邮箱、删除账号
           const actionsCell = document.createElement("td");
           
           const modifyEmailBtn = document.createElement("button");
@@ -983,7 +1000,6 @@
       }
     }
     
-    // 管理员下载所有用户链接数据
     async function downloadAllUserLinks() {
       try {
         const usersSnapshot = await db.collection("users").get();
@@ -1009,7 +1025,6 @@
       }
     }
     
-    // 管理员操作：修改用户邮箱
     async function modifyUserEmail(uid) {
       const newEmail = prompt("新しいメールアドレスを入力してください:");
       if (!newEmail) return;
@@ -1022,7 +1037,6 @@
       }
     }
     
-    // 管理员操作：删除用户账号（删除 Firestore 中用户文档及其链接数据）
     async function deleteUserAccount(uid) {
       if (!confirm("本当にこのアカウントを削除してもよろしいですか？")) return;
       try {
@@ -1050,6 +1064,46 @@
       localStorage.setItem('theme', isLight ? 'light' : 'dark');
     });
     
+    // 初始化 Sortable 拖拽排序，并在 onEnd 时批量更新 order 值
+    function initSortable() {
+      const listContainer = document.getElementById('linksList');
+      if (!document.getElementById('searchInput').value.trim()) {
+        new Sortable(listContainer, {
+          animation: 150,
+          onEnd: function(evt) {
+            const cards = listContainer.children;
+            const user = auth.currentUser;
+            if (!user) return;
+            showOpSpinner();
+            const batch = db.batch();
+            for (let i = 0; i < cards.length; i++) {
+              const docId = cards[i].getAttribute('data-id');
+              const docRef = db.collection("users").doc(user.uid).collection("links").doc(docId);
+              batch.update(docRef, { order: i });
+            }
+            batch.commit().then(() => {
+              hideOpSpinner();
+              loadUserLinks();
+            }).catch(error => {
+              hideOpSpinner();
+              alert("順序更新エラー: " + error.message);
+            });
+          }
+        });
+      }
+    }
+    
+    // 每次渲染完成后初始化 Sortable
+    function renderLinks(filteredLinks = null) {
+      const listContainer = document.getElementById('linksList');
+      listContainer.innerHTML = '';
+      const displayLinks = filteredLinks !== null ? filteredLinks : links;
+      displayLinks.forEach((link, index) => {
+        const card = createLinkCard(link, index);
+        listContainer.appendChild(card);
+      });
+      initSortable();
+    }
   </script>
 </body>
 </html>
