@@ -80,7 +80,7 @@
       margin-left: 10px;
     }
     
-    /* ツールバー */
+    /* 工具栏 */
     .toolbar {
       display: flex;
       align-items: center;
@@ -492,25 +492,23 @@
     
     // 定义全局变量
     let links = []; // 当前用户的链接数组
-    // 使用 IE 图标作为默认 favicon（来自 Wikimedia Commons）
-    const fallbackIcon = "https://upload.wikimedia.org/wikipedia/commons/thumb/3/35/Internet_Explorer_9_icon.svg/32px-Internet_Explorer_9_icon.svg.png";
     
-    // 显示/隐藏操作等待的 Spinner
-    function showOpSpinner() {
-      document.getElementById('opSpinner').style.display = 'block';
-    }
-    function hideOpSpinner() {
-      document.getElementById('opSpinner').style.display = 'none';
-    }
-    
-    // 获取 favicon 的函数
+    // 当 favicon 无法加载时隐藏图片，显示为空
     function getFaviconUrl(url) {
       try {
         const urlObj = new URL(url);
         return urlObj.origin + '/favicon.ico';
       } catch (e) {
-        return fallbackIcon;
+        return ""; // 返回空字符串，不显示图标
       }
+    }
+    
+    // 隐藏操作等待的 Spinner
+    function showOpSpinner() {
+      document.getElementById('opSpinner').style.display = 'block';
+    }
+    function hideOpSpinner() {
+      document.getElementById('opSpinner').style.display = 'none';
     }
     
     // 认证状态监听器
@@ -703,10 +701,8 @@
       icon.className = 'link-icon';
       icon.src = getFaviconUrl(link.url);
       icon.alt = 'favicon';
-      icon.onerror = function() {
-        this.onerror = null;
-        this.src = fallbackIcon;
-      };
+      // 如果加载失败则隐藏该图片
+      icon.onerror = function() { this.style.display = 'none'; };
       header.appendChild(icon);
       
       const info = document.createElement('div');
@@ -828,10 +824,33 @@
       document.getElementById('addLinkModal').style.display = 'none';
     }
     function submitNewLink() {
-      const name = document.getElementById('modalLinkName').value.trim();
+      const nameInput = document.getElementById('modalLinkName');
       const url = document.getElementById('modalLinkURL').value.trim();
       const tagsRaw = document.getElementById('modalLinkTags').value.trim();
       const tags = tagsRaw ? tagsRaw.split(',').map(tag => tag.trim()).filter(tag => tag) : [];
+      // 如果链接名称为空，将自动尝试获取网站标题
+      if (!nameInput.value.trim() && url) {
+        // 使用 AllOrigins 获取页面内容
+        fetch("https://api.allorigins.hexocode.repl.co/get?disableCache=true&url=" + encodeURIComponent(url))
+        .then(response => response.json())
+        .then(data => {
+          const html = data.contents;
+          const match = html.match(/<title>([^<]+)<\/title>/i);
+          if (match && match[1]) {
+            nameInput.value = match[1].trim();
+          }
+          // 调用保存函数
+          saveNewLink(nameInput.value.trim(), url, tags);
+        })
+        .catch(() => {
+          // 获取失败时直接保存空的名称
+          saveNewLink(nameInput.value.trim(), url, tags);
+        });
+      } else {
+        saveNewLink(nameInput.value.trim(), url, tags);
+      }
+    }
+    function saveNewLink(name, url, tags) {
       if (!name || !url) {
         alert("すべての情報を入力してください！");
         return;
@@ -1081,6 +1100,26 @@
       });
       initSortable();
     }
+    
+    // 当用户填写 URL 后自动获取网站标题填入名称（失去焦点时触发）
+    document.getElementById('modalLinkURL').addEventListener('blur', function() {
+      const url = this.value.trim();
+      const nameInput = document.getElementById('modalLinkName');
+      if (!url || nameInput.value.trim()) return;
+      // 调用 AllOrigins 获取页面 HTML
+      fetch("https://api.allorigins.hexocode.repl.co/get?disableCache=true&url=" + encodeURIComponent(url))
+        .then(response => response.json())
+        .then(data => {
+          const html = data.contents;
+          const match = html.match(/<title>([^<]+)<\/title>/i);
+          if (match && match[1]) {
+            nameInput.value = match[1].trim();
+          }
+        })
+        .catch(err => {
+          console.error("タイトル取得失敗:", err);
+        });
+    });
   </script>
 </body>
 </html>
