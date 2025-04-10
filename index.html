@@ -11,8 +11,8 @@
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
-  <!-- 引入 SheetJS (xlsx) 库 -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <!-- 使用 xlsx‑style 以尽量保留格式和公式 -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx-style/0.8.13/xlsx.full.min.js"></script>
   
   <style>
     /* 新主题设置 */
@@ -48,7 +48,8 @@
     body::before {
       content: "";
       position: fixed;
-      top: 0; left: 0;
+      top: 0;
+      left: 0;
       width: 100%;
       height: 100%;
       background: radial-gradient(ellipse at center, rgba(0,0,0,0.3) 0%, transparent 80%);
@@ -81,11 +82,10 @@
     .top-right-buttons button {
       margin-left: 10px;
     }
-    
-    /* 这里在管理和ログアウト之间新增“勤務表作成”按钮 */
+    /* 在管理和ログアウト之间新增“勤務表作成”按钮 */
     .top-right-buttons #workSheetBtn {
       margin-left: 10px;
-      background-color: #4CAF50; /* 使用绿色 */
+      background-color: #4CAF50; /* 绿色 */
     }
     
     /* 工具栏 */
@@ -370,7 +370,7 @@
       transform: translateY(-2px);
     }
     
-    /* 新增：勤務表作成 模态框 */
+    /* 勤務表作成 模态框 */
     #workSheetModal {
       position: fixed;
       top: 50%;
@@ -458,7 +458,7 @@
   <!-- 模态框遮罩层 -->
   <div id="modalOverlay" style="display:none;"></div>
   
-  <!-- 新增：勤務表作成 模态框 -->
+  <!-- 勤務表作成 模态框 -->
   <div id="workSheetModal" style="display:none;">
     <h2>勤務表作成</h2>
     <label for="wsLastName">姓（例：山田）</label>
@@ -556,7 +556,7 @@
     // 定义全局变量
     let links = [];
     
-    // 这里不显示默认图标：当 favicon 加载失败时不显示图片
+    // 当 favicon 无法加载时不显示图片
     function getFaviconUrl(url) {
       try {
         const urlObj = new URL(url);
@@ -865,786 +865,6 @@
       initSortable();
     }
     
-    // 模态框操作
-    function openAddModal() {
-      document.getElementById('modalOverlay').style.display = 'block';
-      document.getElementById('addLinkModal').style.display = 'block';
-      document.getElementById('modalLinkName').value = '';
-      document.getElementById('modalLinkURL').value = '';
-      document.getElementById('modalLinkTags').value = '';
-    }
-    function closeAddModal() {
-      document.getElementById('modalOverlay').style.display = 'none';
-      document.getElementById('addLinkModal').style.display = 'none';
-    }
-    function submitNewLink() {
-      const nameInput = document.getElementById('modalLinkName');
-      const url = document.getElementById('modalLinkURL').value.trim();
-      const tagsRaw = document.getElementById('modalLinkTags').value.trim();
-      const tags = tagsRaw ? tagsRaw.split(',').map(tag => tag.trim()).filter(tag => tag) : [];
-      if (!nameInput.value.trim() && url) {
-        fetch("https://api.allorigins.hexocode.repl.co/get?disableCache=true&url=" + encodeURIComponent(url))
-        .then(response => response.json())
-        .then(data => {
-          const html = data.contents;
-          const match = html.match(/<title>([^<]+)<\/title>/i);
-          if (match && match[1]) {
-            nameInput.value = match[1].trim();
-          }
-          saveNewLink(nameInput.value.trim(), url, tags);
-        })
-        .catch(() => {
-          saveNewLink(nameInput.value.trim(), url, tags);
-        });
-      } else {
-        saveNewLink(nameInput.value.trim(), url, tags);
-      }
-    }
-    function saveNewLink(name, url, tags) {
-      if (!name || !url) {
-        alert("すべての情報を入力してください！");
-        return;
-      }
-      const duplicate = links.find(l => l.url.toLowerCase() === url.toLowerCase() || l.name.toLowerCase() === name.toLowerCase());
-      if (duplicate) {
-        if (confirm("重複したリンクが検出されました。既存のリンク情報と統合して更新しますか？")) {
-          const existingTags = duplicate.tags || [];
-          const mergedTags = Array.from(new Set([...existingTags, ...tags]));
-          updateLinkInFirestore(duplicate.id, { name: name, url: url, tags: mergedTags });
-          closeAddModal();
-        } else {
-          return;
-        }
-      } else {
-        addLinkToFirestore({ name: name, url: url, tags: tags });
-      }
-    }
-    
-    document.getElementById('searchInput').addEventListener('input', function() {
-      const query = this.value.trim().toLowerCase();
-      const filtered = links.filter(link => {
-        const nameMatch = link.name.toLowerCase().includes(query);
-        const urlMatch = link.url.toLowerCase().includes(query);
-        const tagMatch = link.tags && link.tags.some(tag => tag.toLowerCase().includes(query));
-        return nameMatch || urlMatch || tagMatch;
-      });
-      renderLinks(filtered);
-    });
-    
-    function exportLinks() {
-      const dataStr = JSON.stringify(links, null, 2);
-      const blob = new Blob([dataStr], { type: "application/json" });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = "links_backup.json";
-      a.click();
-      URL.revokeObjectURL(url);
-    }
-    
-    document.getElementById('importInput').addEventListener('change', function(event) {
-      const file = event.target.files[0];
-      const reader = new FileReader();
-      reader.onload = function(e) {
-        try {
-          const importedLinks = JSON.parse(e.target.result);
-          if (Array.isArray(importedLinks)) {
-            const user = auth.currentUser;
-            if (!user) return;
-            db.collection("users").doc(user.uid).collection("links").get()
-              .then(querySnapshot => {
-                const batch = db.batch();
-                querySnapshot.forEach(doc => {
-                  batch.delete(doc.ref);
-                });
-                return batch.commit();
-              })
-              .then(() => {
-                const promises = importedLinks.map(linkData => {
-                  return db.collection("users").doc(user.uid).collection("links").add(linkData);
-                });
-                return Promise.all(promises);
-              })
-              .then(() => {
-                loadUserLinks();
-                alert("データのインポートに成功しました！");
-              })
-              .catch(error => {
-                alert("データインポートエラー: " + error.message);
-              });
-          } else {
-            alert("データ形式が正しくありません！");
-          }
-        } catch (err) {
-          alert("インポートに失敗しました。ファイル形式が正しくありません！");
-        }
-      };
-      reader.readAsText(file);
-    });
-    
-    // ======= 管理者功能 =======
-    async function openAdminModal() {
-      await renderAdminData();
-      document.getElementById('modalOverlay').style.display = 'block';
-      document.getElementById('adminModal').style.display = 'block';
-    }
-    function closeAdminModal() {
-      document.getElementById('modalOverlay').style.display = 'none';
-      document.getElementById('adminModal').style.display = 'none';
-    }
-    function formatLoginTime(isoString) {
-      const date = new Date(isoString);
-      if (isNaN(date.getTime())) return "";
-      const yyyy = date.getFullYear();
-      const mm = String(date.getMonth() + 1).padStart(2, '0');
-      const dd = String(date.getDate()).padStart(2, '0');
-      const hh = String(date.getHours()).padStart(2, '0');
-      const min = String(date.getMinutes()).padStart(2, '0');
-      const ss = String(date.getSeconds()).padStart(2, '0');
-      return `${yyyy}/${mm}/${dd}\n${hh}:${min}:${ss}`;
-    }
-    async function renderAdminData() {
-      const adminTable = document.getElementById('adminTable');
-      const adminTableBody = adminTable.getElementsByTagName('tbody')[0];
-      adminTableBody.innerHTML = "";
-      try {
-        const querySnapshot = await db.collection("users").get();
-        querySnapshot.forEach(doc => {
-          const userData = doc.data();
-          const row = document.createElement("tr");
-          const uidCell = document.createElement("td");
-          uidCell.textContent = doc.id;
-          row.appendChild(uidCell);
-          const emailCell = document.createElement("td");
-          emailCell.textContent = userData.email || "";
-          row.appendChild(emailCell);
-          const loginTimeCell = document.createElement("td");
-          loginTimeCell.textContent = formatLoginTime(userData.lastLogin || "");
-          row.appendChild(loginTimeCell);
-          const adminCell = document.createElement("td");
-          adminCell.textContent = userData.isAdmin ? "是" : "否";
-          row.appendChild(adminCell);
-          const actionsCell = document.createElement("td");
-          
-          const modifyEmailBtn = document.createElement("button");
-          modifyEmailBtn.textContent = "変更";
-          modifyEmailBtn.className = "btn";
-          modifyEmailBtn.onclick = function() { modifyUserEmail(doc.id); };
-          actionsCell.appendChild(modifyEmailBtn);
-          
-          const deleteAccountBtn = document.createElement("button");
-          deleteAccountBtn.textContent = "削除";
-          deleteAccountBtn.className = "btn";
-          deleteAccountBtn.onclick = function() { deleteUserAccount(doc.id); };
-          actionsCell.appendChild(deleteAccountBtn);
-          
-          row.appendChild(actionsCell);
-          adminTableBody.appendChild(row);
-        });
-      } catch (error) {
-        alert("管理者データの取得に失敗しました: " + error.message);
-      }
-    }
-    
-    async function downloadAllUserLinks() {
-      try {
-        const usersSnapshot = await db.collection("users").get();
-        let allData = {};
-        for (const userDoc of usersSnapshot.docs) {
-          const linksSnapshot = await db.collection("users").doc(userDoc.id).collection("links").get();
-          let linksArray = [];
-          linksSnapshot.forEach(linkDoc => {
-            linksArray.push({ id: linkDoc.id, ...linkDoc.data() });
-          });
-          allData[userDoc.id] = { user: userDoc.data(), links: linksArray };
-        }
-        const dataStr = JSON.stringify(allData, null, 2);
-        const blob = new Blob([dataStr], { type: "application/json" });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = "all_users_links.json";
-        a.click();
-        URL.revokeObjectURL(url);
-      } catch (error) {
-        alert("全ユーザーリンクダウンロードエラー: " + error.message);
-      }
-    }
-    
-    async function modifyUserEmail(uid) {
-      const newEmail = prompt("新しいメールアドレスを入力してください:");
-      if (!newEmail) return;
-      try {
-        await db.collection("users").doc(uid).update({ email: newEmail });
-        alert("メールアドレスが更新されました。");
-        renderAdminData();
-      } catch (error) {
-        alert("メールアドレス更新エラー: " + error.message);
-      }
-    }
-    
-    async function deleteUserAccount(uid) {
-      if (!confirm("本当にこのアカウントを削除してもよろしいですか？")) return;
-      try {
-        const linksSnapshot = await db.collection("users").doc(uid).collection("links").get();
-        const batch = db.batch();
-        linksSnapshot.forEach(doc => {
-          batch.delete(doc.ref);
-        });
-        await batch.commit();
-        await db.collection("users").doc(uid).delete();
-        alert("アカウントが削除されました。");
-        renderAdminData();
-      } catch (error) {
-        alert("アカウント削除エラー: " + error.message);
-      }
-    }
-    
-    // ======= 主题切换逻辑 =======
-    if (localStorage.getItem('theme') === 'light') {
-      document.body.classList.add('light-theme');
-    }
-    document.getElementById('themeToggle').addEventListener('click', () => {
-      document.body.classList.toggle('light-theme');
-      const isLight = document.body.classList.contains('light-theme');
-      localStorage.setItem('theme', isLight ? 'light' : 'dark');
-    });
-    
-    // 初始化 Sortable 拖拽排序，并在 onEnd 时更新 order 值
-    function initSortable() {
-      const listContainer = document.getElementById('linksList');
-      if (!document.getElementById('searchInput').value.trim()) {
-        new Sortable(listContainer, {
-          animation: 150,
-          onEnd: function(evt) {
-            const cards = listContainer.children;
-            const user = auth.currentUser;
-            if (!user) return;
-            showOpSpinner();
-            const batch = db.batch();
-            for (let i = 0; i < cards.length; i++) {
-              const docId = cards[i].getAttribute('data-id');
-              const docRef = db.collection("users").doc(user.uid).collection("links").doc(docId);
-              batch.update(docRef, { order: i });
-            }
-            batch.commit().then(() => {
-              hideOpSpinner();
-              loadUserLinks();
-            }).catch(error => {
-              hideOpSpinner();
-              alert("順序更新エラー: " + error.message);
-            });
-          }
-        });
-      }
-    }
-    
-    function renderLinks(filteredLinks = null) {
-      const listContainer = document.getElementById('linksList');
-      listContainer.innerHTML = '';
-      const displayLinks = filteredLinks !== null ? filteredLinks : links;
-      displayLinks.forEach((link, index) => {
-        const card = createLinkCard(link, index);
-        listContainer.appendChild(card);
-      });
-      initSortable();
-    }
-    
-    // ======= 勤務表作成 相关功能 =======
-    // 打开勤務表作成模态框，默认勤務表期間设为当前月份
-    function openWorkSheetModal() {
-      document.getElementById('modalOverlay').style.display = 'block';
-      const modal = document.getElementById('workSheetModal');
-      modal.style.display = 'block';
-      // 默认值为当前月份（格式：YYYY-MM），便于输入控件显示默认当前月份
-      const today = new Date();
-      const yyyy = today.getFullYear();
-      const mm = String(today.getMonth() + 1).padStart(2, '0');
-      document.getElementById('wsPeriod').value = `${yyyy}-${mm}`;
-      // 清空姓和名输入框
-      document.getElementById('wsLastName').value = "";
-      document.getElementById('wsFirstName').value = "";
-    }
-    function closeWorkSheetModal() {
-      document.getElementById('modalOverlay').style.display = 'none';
-      document.getElementById('workSheetModal').style.display = 'none';
-    }
-    
-    // 创建并下载勤務表 Excel 文件
-    function downloadWorkSheet() {
-      const lastName = document.getElementById('wsLastName').value.trim();
-      const firstName = document.getElementById('wsFirstName').value.trim();
-      const period = document.getElementById('wsPeriod').value; // 格式 "YYYY-MM"
-      if (!lastName || !firstName || !period) {
-        alert("すべての情報を入力してください！");
-        return;
-      }
-      // 格式化月份为 "MM月"
-      const monthStr = period.split("-")[1] + "月";
-      
-      showOpSpinner();
-      // 加载模板 Excel 文件（确保模板“M-NET勤務表_雛形.xls”与此文件同目录）
-      fetch("M-NET勤務表_雛形.xls")
-        .then(response => response.arrayBuffer())
-        .then(data => {
-          // 读取工作簿（模板可能为xls格式，可用 SheetJS 解析）
-          const workbook = XLSX.read(data, { type: 'array' });
-          // 修改第一个 sheet
-          const sheetName = workbook.SheetNames[0];
-          const worksheet = workbook.Sheets[sheetName];
-          // 修改工作表名称为当前月份（如“03月”）
-          workbook.SheetNames[0] = monthStr;
-          workbook.Sheets[monthStr] = worksheet;
-          // 将 D2 设为当前月份
-          worksheet["D2"] = { v: monthStr };
-          // 将 N54 设为姓， O54 设为名
-          worksheet["N54"] = { v: lastName };
-          worksheet["O54"] = { v: firstName };
-          // 生成 xlsx 文件数据
-          const wbout = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
-          hideOpSpinner();
-          // 触发下载，文件名可以用 "勤務表_YYYYMM.xlsx"
-          const fileName = "勤務表_" + period.replace("-", "") + ".xlsx";
-          const blob = new Blob([wbout], { type: "application/octet-stream" });
-          const url = URL.createObjectURL(blob);
-          const a = document.createElement("a");
-          a.href = url;
-          a.download = fileName;
-          a.click();
-          URL.revokeObjectURL(url);
-          closeWorkSheetModal();
-        })
-        .catch(err => {
-          hideOpSpinner();
-          alert("勤務表作成エラー: " + err.message);
-        });
-    }
-    
-    // ======= 初始化 Sortable =======
-    function initSortable() {
-      const listContainer = document.getElementById('linksList');
-      if (!document.getElementById('searchInput').value.trim()) {
-        new Sortable(listContainer, {
-          animation: 150,
-          onEnd: function(evt) {
-            const cards = listContainer.children;
-            const user = auth.currentUser;
-            if (!user) return;
-            showOpSpinner();
-            const batch = db.batch();
-            for (let i = 0; i < cards.length; i++) {
-              const docId = cards[i].getAttribute('data-id');
-              const docRef = db.collection("users").doc(user.uid).collection("links").doc(docId);
-              batch.update(docRef, { order: i });
-            }
-            batch.commit().then(() => {
-              hideOpSpinner();
-              loadUserLinks();
-            }).catch(error => {
-              hideOpSpinner();
-              alert("順序更新エラー: " + error.message);
-            });
-          }
-        });
-      }
-    }
-    
-    function renderLinks(filteredLinks = null) {
-      const listContainer = document.getElementById('linksList');
-      listContainer.innerHTML = '';
-      const displayLinks = filteredLinks !== null ? filteredLinks : links;
-      displayLinks.forEach((link, index) => {
-        const card = createLinkCard(link, index);
-        listContainer.appendChild(card);
-      });
-      initSortable();
-    }
-    
-    // ======= 模态框操作 =======
-    function openAddModal() {
-      document.getElementById('modalOverlay').style.display = 'block';
-      document.getElementById('addLinkModal').style.display = 'block';
-      document.getElementById('modalLinkName').value = '';
-      document.getElementById('modalLinkURL').value = '';
-      document.getElementById('modalLinkTags').value = '';
-    }
-    function closeAddModal() {
-      document.getElementById('modalOverlay').style.display = 'none';
-      document.getElementById('addLinkModal').style.display = 'none';
-    }
-    function submitNewLink() {
-      const nameInput = document.getElementById('modalLinkName');
-      const url = document.getElementById('modalLinkURL').value.trim();
-      const tagsRaw = document.getElementById('modalLinkTags').value.trim();
-      const tags = tagsRaw ? tagsRaw.split(',').map(tag => tag.trim()).filter(tag => tag) : [];
-      if (!nameInput.value.trim() && url) {
-        fetch("https://api.allorigins.hexocode.repl.co/get?disableCache=true&url=" + encodeURIComponent(url))
-        .then(response => response.json())
-        .then(data => {
-          const html = data.contents;
-          const match = html.match(/<title>([^<]+)<\/title>/i);
-          if (match && match[1]) {
-            nameInput.value = match[1].trim();
-          }
-          saveNewLink(nameInput.value.trim(), url, tags);
-        })
-        .catch(() => {
-          saveNewLink(nameInput.value.trim(), url, tags);
-        });
-      } else {
-        saveNewLink(nameInput.value.trim(), url, tags);
-      }
-    }
-    function saveNewLink(name, url, tags) {
-      if (!name || !url) {
-        alert("すべての情報を入力してください！");
-        return;
-      }
-      const duplicate = links.find(l => l.url.toLowerCase() === url.toLowerCase() || l.name.toLowerCase() === name.toLowerCase());
-      if (duplicate) {
-        if (confirm("重複したリンクが検出されました。既存のリンク情報と統合して更新しますか？")) {
-          const existingTags = duplicate.tags || [];
-          const mergedTags = Array.from(new Set([...existingTags, ...tags]));
-          updateLinkInFirestore(duplicate.id, { name: name, url: url, tags: mergedTags });
-          closeAddModal();
-        } else {
-          return;
-        }
-      } else {
-        addLinkToFirestore({ name: name, url: url, tags: tags });
-      }
-    }
-    
-    document.getElementById('searchInput').addEventListener('input', function() {
-      const query = this.value.trim().toLowerCase();
-      const filtered = links.filter(link => {
-        const nameMatch = link.name.toLowerCase().includes(query);
-        const urlMatch = link.url.toLowerCase().includes(query);
-        const tagMatch = link.tags && link.tags.some(tag => tag.toLowerCase().includes(query));
-        return nameMatch || urlMatch || tagMatch;
-      });
-      renderLinks(filtered);
-    });
-    
-    function exportLinks() {
-      const dataStr = JSON.stringify(links, null, 2);
-      const blob = new Blob([dataStr], { type: "application/json" });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = "links_backup.json";
-      a.click();
-      URL.revokeObjectURL(url);
-    }
-    
-    document.getElementById('importInput').addEventListener('change', function(event) {
-      const file = event.target.files[0];
-      const reader = new FileReader();
-      reader.onload = function(e) {
-        try {
-          const importedLinks = JSON.parse(e.target.result);
-          if (Array.isArray(importedLinks)) {
-            const user = auth.currentUser;
-            if (!user) return;
-            db.collection("users").doc(user.uid).collection("links").get()
-              .then(querySnapshot => {
-                const batch = db.batch();
-                querySnapshot.forEach(doc => {
-                  batch.delete(doc.ref);
-                });
-                return batch.commit();
-              })
-              .then(() => {
-                const promises = importedLinks.map(linkData => {
-                  return db.collection("users").doc(user.uid).collection("links").add(linkData);
-                });
-                return Promise.all(promises);
-              })
-              .then(() => {
-                loadUserLinks();
-                alert("データのインポートに成功しました！");
-              })
-              .catch(error => {
-                alert("データインポートエラー: " + error.message);
-              });
-          } else {
-            alert("データ形式が正しくありません！");
-          }
-        } catch (err) {
-          alert("インポートに失敗しました。ファイル形式が正しくありません！");
-        }
-      };
-      reader.readAsText(file);
-    });
-    
-    // ======= 管理者功能 =======
-    async function openAdminModal() {
-      await renderAdminData();
-      document.getElementById('modalOverlay').style.display = 'block';
-      document.getElementById('adminModal').style.display = 'block';
-    }
-    function closeAdminModal() {
-      document.getElementById('modalOverlay').style.display = 'none';
-      document.getElementById('adminModal').style.display = 'none';
-    }
-    function formatLoginTime(isoString) {
-      const date = new Date(isoString);
-      if (isNaN(date.getTime())) return "";
-      const yyyy = date.getFullYear();
-      const mm = String(date.getMonth() + 1).padStart(2, '0');
-      const dd = String(date.getDate()).padStart(2, '0');
-      const hh = String(date.getHours()).padStart(2, '0');
-      const min = String(date.getMinutes()).padStart(2, '0');
-      const ss = String(date.getSeconds()).padStart(2, '0');
-      return `${yyyy}/${mm}/${dd}\n${hh}:${min}:${ss}`;
-    }
-    async function renderAdminData() {
-      const adminTable = document.getElementById('adminTable');
-      const adminTableBody = adminTable.getElementsByTagName('tbody')[0];
-      adminTableBody.innerHTML = "";
-      try {
-        const querySnapshot = await db.collection("users").get();
-        querySnapshot.forEach(doc => {
-          const userData = doc.data();
-          const row = document.createElement("tr");
-          const uidCell = document.createElement("td");
-          uidCell.textContent = doc.id;
-          row.appendChild(uidCell);
-          const emailCell = document.createElement("td");
-          emailCell.textContent = userData.email || "";
-          row.appendChild(emailCell);
-          const loginTimeCell = document.createElement("td");
-          loginTimeCell.textContent = formatLoginTime(userData.lastLogin || "");
-          row.appendChild(loginTimeCell);
-          const adminCell = document.createElement("td");
-          adminCell.textContent = userData.isAdmin ? "是" : "否";
-          row.appendChild(adminCell);
-          const actionsCell = document.createElement("td");
-          
-          const modifyEmailBtn = document.createElement("button");
-          modifyEmailBtn.textContent = "変更";
-          modifyEmailBtn.className = "btn";
-          modifyEmailBtn.onclick = function() { modifyUserEmail(doc.id); };
-          actionsCell.appendChild(modifyEmailBtn);
-          
-          const deleteAccountBtn = document.createElement("button");
-          deleteAccountBtn.textContent = "削除";
-          deleteAccountBtn.className = "btn";
-          deleteAccountBtn.onclick = function() { deleteUserAccount(doc.id); };
-          actionsCell.appendChild(deleteAccountBtn);
-          
-          row.appendChild(actionsCell);
-          adminTableBody.appendChild(row);
-        });
-      } catch (error) {
-        alert("管理者データの取得に失敗しました: " + error.message);
-      }
-    }
-    
-    async function downloadAllUserLinks() {
-      try {
-        const usersSnapshot = await db.collection("users").get();
-        let allData = {};
-        for (const userDoc of usersSnapshot.docs) {
-          const linksSnapshot = await db.collection("users").doc(userDoc.id).collection("links").get();
-          let linksArray = [];
-          linksSnapshot.forEach(linkDoc => {
-            linksArray.push({ id: linkDoc.id, ...linkDoc.data() });
-          });
-          allData[userDoc.id] = { user: userDoc.data(), links: linksArray };
-        }
-        const dataStr = JSON.stringify(allData, null, 2);
-        const blob = new Blob([dataStr], { type: "application/json" });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = "all_users_links.json";
-        a.click();
-        URL.revokeObjectURL(url);
-      } catch (error) {
-        alert("全ユーザーリンクダウンロードエラー: " + error.message);
-      }
-    }
-    
-    async function modifyUserEmail(uid) {
-      const newEmail = prompt("新しいメールアドレスを入力してください:");
-      if (!newEmail) return;
-      try {
-        await db.collection("users").doc(uid).update({ email: newEmail });
-        alert("メールアドレスが更新されました。");
-        renderAdminData();
-      } catch (error) {
-        alert("メールアドレス更新エラー: " + error.message);
-      }
-    }
-    
-    async function deleteUserAccount(uid) {
-      if (!confirm("本当にこのアカウントを削除してもよろしいですか？")) return;
-      try {
-        const linksSnapshot = await db.collection("users").doc(uid).collection("links").get();
-        const batch = db.batch();
-        linksSnapshot.forEach(doc => {
-          batch.delete(doc.ref);
-        });
-        await batch.commit();
-        await db.collection("users").doc(uid).delete();
-        alert("アカウントが削除されました。");
-        renderAdminData();
-      } catch (error) {
-        alert("アカウント削除エラー: " + error.message);
-      }
-    }
-    
-    // ======= 主题切换逻辑 =======
-    if (localStorage.getItem('theme') === 'light') {
-      document.body.classList.add('light-theme');
-    }
-    document.getElementById('themeToggle').addEventListener('click', () => {
-      document.body.classList.toggle('light-theme');
-      const isLight = document.body.classList.contains('light-theme');
-      localStorage.setItem('theme', isLight ? 'light' : 'dark');
-    });
-    
-    // 初始化 Sortable
-    function initSortable() {
-      const listContainer = document.getElementById('linksList');
-      if (!document.getElementById('searchInput').value.trim()) {
-        new Sortable(listContainer, {
-          animation: 150,
-          onEnd: function(evt) {
-            const cards = listContainer.children;
-            const user = auth.currentUser;
-            if (!user) return;
-            showOpSpinner();
-            const batch = db.batch();
-            for (let i = 0; i < cards.length; i++) {
-              const docId = cards[i].getAttribute('data-id');
-              const docRef = db.collection("users").doc(user.uid).collection("links").doc(docId);
-              batch.update(docRef, { order: i });
-            }
-            batch.commit().then(() => {
-              hideOpSpinner();
-              loadUserLinks();
-            }).catch(error => {
-              hideOpSpinner();
-              alert("順序更新エラー: " + error.message);
-            });
-          }
-        });
-      }
-    }
-    
-    function renderLinks(filteredLinks = null) {
-      const listContainer = document.getElementById('linksList');
-      listContainer.innerHTML = '';
-      const displayLinks = filteredLinks !== null ? filteredLinks : links;
-      displayLinks.forEach((link, index) => {
-        const card = createLinkCard(link, index);
-        listContainer.appendChild(card);
-      });
-      initSortable();
-    }
-    
-    // ======= 勤務表作成 相关功能 =======
-    function openWorkSheetModal() {
-      document.getElementById('modalOverlay').style.display = 'block';
-      const modal = document.getElementById('workSheetModal');
-      modal.style.display = 'block';
-      const today = new Date();
-      const yyyy = today.getFullYear();
-      const mm = String(today.getMonth() + 1).padStart(2, '0');
-      document.getElementById('wsPeriod').value = `${yyyy}-${mm}`;
-      document.getElementById('wsLastName').value = "";
-      document.getElementById('wsFirstName').value = "";
-    }
-    function closeWorkSheetModal() {
-      document.getElementById('modalOverlay').style.display = 'none';
-      document.getElementById('workSheetModal').style.display = 'none';
-    }
-    
-    function downloadWorkSheet() {
-      const lastName = document.getElementById('wsLastName').value.trim();
-      const firstName = document.getElementById('wsFirstName').value.trim();
-      const period = document.getElementById('wsPeriod').value;
-      if (!lastName || !firstName || !period) {
-        alert("すべての情報を入力してください！");
-        return;
-      }
-      // 期望sheet名格式："MM月"
-      const monthStr = period.split("-")[1] + "月";
-      
-      showOpSpinner();
-      fetch("M-NET勤務表_雛形.xls")
-        .then(response => response.arrayBuffer())
-        .then(data => {
-          const workbook = XLSX.read(data, { type: 'array' });
-          const origSheetName = workbook.SheetNames[0];
-          const worksheet = workbook.Sheets[origSheetName];
-          // 修改 sheet 名称为当前月份
-          workbook.SheetNames[0] = monthStr;
-          workbook.Sheets[monthStr] = worksheet;
-          // 修改单元格 D2、N54、O54
-          worksheet["D2"] = { v: monthStr };
-          worksheet["N54"] = { v: lastName };
-          worksheet["O54"] = { v: firstName };
-          const wbout = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
-          hideOpSpinner();
-          const fileName = "勤務表_" + period.replace("-", "") + ".xlsx";
-          const blob = new Blob([wbout], { type: "application/octet-stream" });
-          const url = URL.createObjectURL(blob);
-          const a = document.createElement("a");
-          a.href = url;
-          a.download = fileName;
-          a.click();
-          URL.revokeObjectURL(url);
-          closeWorkSheetModal();
-        })
-        .catch(err => {
-          hideOpSpinner();
-          alert("勤務表作成エラー: " + err.message);
-        });
-    }
-    
-    // ======= 初始化 Sortable 拖拽排序 =======
-    function initSortable() {
-      const listContainer = document.getElementById('linksList');
-      if (!document.getElementById('searchInput').value.trim()) {
-        new Sortable(listContainer, {
-          animation: 150,
-          onEnd: function(evt) {
-            const cards = listContainer.children;
-            const user = auth.currentUser;
-            if (!user) return;
-            showOpSpinner();
-            const batch = db.batch();
-            for (let i = 0; i < cards.length; i++) {
-              const docId = cards[i].getAttribute('data-id');
-              const docRef = db.collection("users").doc(user.uid).collection("links").doc(docId);
-              batch.update(docRef, { order: i });
-            }
-            batch.commit().then(() => {
-              hideOpSpinner();
-              loadUserLinks();
-            }).catch(error => {
-              hideOpSpinner();
-              alert("順序更新エラー: " + error.message);
-            });
-          }
-        });
-      }
-    }
-    
-    function renderLinks(filteredLinks = null) {
-      const listContainer = document.getElementById('linksList');
-      listContainer.innerHTML = '';
-      const displayLinks = filteredLinks !== null ? filteredLinks : links;
-      displayLinks.forEach((link, index) => {
-        const card = createLinkCard(link, index);
-        listContainer.appendChild(card);
-      });
-      initSortable();
-    }
-    
     // ======= 模态框操作 =======
     function openAddModal() {
       document.getElementById('modalOverlay').style.display = 'block';
@@ -1676,7 +896,596 @@
         });
     });
     
-    // ======= 勤務表作成相关模态框处理 =======
+    function submitNewLink() {
+      const nameInput = document.getElementById('modalLinkName');
+      const url = document.getElementById('modalLinkURL').value.trim();
+      const tagsRaw = document.getElementById('modalLinkTags').value.trim();
+      const tags = tagsRaw ? tagsRaw.split(',').map(tag => tag.trim()).filter(tag => tag) : [];
+      if (!nameInput.value.trim() && url) {
+        fetch("https://api.allorigins.hexocode.repl.co/get?disableCache=true&url=" + encodeURIComponent(url))
+          .then(response => response.json())
+          .then(data => {
+            const html = data.contents;
+            const match = html.match(/<title>([^<]+)<\/title>/i);
+            if (match && match[1]) {
+              nameInput.value = match[1].trim();
+            }
+            saveNewLink(nameInput.value.trim(), url, tags);
+          })
+          .catch(() => {
+            saveNewLink(nameInput.value.trim(), url, tags);
+          });
+      } else {
+        saveNewLink(nameInput.value.trim(), url, tags);
+      }
+    }
+    function saveNewLink(name, url, tags) {
+      if (!name || !url) {
+        alert("すべての情報を入力してください！");
+        return;
+      }
+      const duplicate = links.find(l => l.url.toLowerCase() === url.toLowerCase() || l.name.toLowerCase() === name.toLowerCase());
+      if (duplicate) {
+        if (confirm("重複したリンクが検出されました。既存のリンク情報と統合して更新しますか？")) {
+          const existingTags = duplicate.tags || [];
+          const mergedTags = Array.from(new Set([...existingTags, ...tags]));
+          updateLinkInFirestore(duplicate.id, { name: name, url: url, tags: mergedTags });
+          closeAddModal();
+        } else {
+          return;
+        }
+      } else {
+        addLinkToFirestore({ name: name, url: url, tags: tags });
+      }
+    }
+    
+    document.getElementById('searchInput').addEventListener('input', function() {
+      const query = this.value.trim().toLowerCase();
+      const filtered = links.filter(link => {
+        const nameMatch = link.name.toLowerCase().includes(query);
+        const urlMatch = link.url.toLowerCase().includes(query);
+        const tagMatch = link.tags && link.tags.some(tag => tag.toLowerCase().includes(query));
+        return nameMatch || urlMatch || tagMatch;
+      });
+      renderLinks(filtered);
+    });
+    
+    function exportLinks() {
+      const dataStr = JSON.stringify(links, null, 2);
+      const blob = new Blob([dataStr], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = "links_backup.json";
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+    
+    document.getElementById('importInput').addEventListener('change', function(event) {
+      const file = event.target.files[0];
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        try {
+          const importedLinks = JSON.parse(e.target.result);
+          if (Array.isArray(importedLinks)) {
+            const user = auth.currentUser;
+            if (!user) return;
+            db.collection("users").doc(user.uid).collection("links").get()
+              .then(querySnapshot => {
+                const batch = db.batch();
+                querySnapshot.forEach(doc => {
+                  batch.delete(doc.ref);
+                });
+                return batch.commit();
+              })
+              .then(() => {
+                const promises = importedLinks.map(linkData => {
+                  return db.collection("users").doc(user.uid).collection("links").add(linkData);
+                });
+                return Promise.all(promises);
+              })
+              .then(() => {
+                loadUserLinks();
+                alert("データのインポートに成功しました！");
+              })
+              .catch(error => {
+                alert("データインポートエラー: " + error.message);
+              });
+          } else {
+            alert("データ形式が正しくありません！");
+          }
+        } catch (err) {
+          alert("インポートに失敗しました。ファイル形式が正しくありません！");
+        }
+      };
+      reader.readAsText(file);
+    });
+    
+    // ======= 管理者功能 =======
+    async function openAdminModal() {
+      await renderAdminData();
+      document.getElementById('modalOverlay').style.display = 'block';
+      document.getElementById('adminModal').style.display = 'block';
+    }
+    function closeAdminModal() {
+      document.getElementById('modalOverlay').style.display = 'none';
+      document.getElementById('adminModal').style.display = 'none';
+    }
+    function formatLoginTime(isoString) {
+      const date = new Date(isoString);
+      if (isNaN(date.getTime())) return "";
+      const yyyy = date.getFullYear();
+      const mm = String(date.getMonth() + 1).padStart(2, '0');
+      const dd = String(date.getDate()).padStart(2, '0');
+      const hh = String(date.getHours()).padStart(2, '0');
+      const min = String(date.getMinutes()).padStart(2, '0');
+      const ss = String(date.getSeconds()).padStart(2, '0');
+      return `${yyyy}/${mm}/${dd}\n${hh}:${min}:${ss}`;
+    }
+    async function renderAdminData() {
+      const adminTable = document.getElementById('adminTable');
+      const adminTableBody = adminTable.getElementsByTagName('tbody')[0];
+      adminTableBody.innerHTML = "";
+      try {
+        const querySnapshot = await db.collection("users").get();
+        querySnapshot.forEach(doc => {
+          const userData = doc.data();
+          const row = document.createElement("tr");
+          const uidCell = document.createElement("td");
+          uidCell.textContent = doc.id;
+          row.appendChild(uidCell);
+          const emailCell = document.createElement("td");
+          emailCell.textContent = userData.email || "";
+          row.appendChild(emailCell);
+          const loginTimeCell = document.createElement("td");
+          loginTimeCell.textContent = formatLoginTime(userData.lastLogin || "");
+          row.appendChild(loginTimeCell);
+          const adminCell = document.createElement("td");
+          adminCell.textContent = userData.isAdmin ? "是" : "否";
+          row.appendChild(adminCell);
+          const actionsCell = document.createElement("td");
+          
+          const modifyEmailBtn = document.createElement("button");
+          modifyEmailBtn.textContent = "変更";
+          modifyEmailBtn.className = "btn";
+          modifyEmailBtn.onclick = function() { modifyUserEmail(doc.id); };
+          actionsCell.appendChild(modifyEmailBtn);
+          
+          const deleteAccountBtn = document.createElement("button");
+          deleteAccountBtn.textContent = "削除";
+          deleteAccountBtn.className = "btn";
+          deleteAccountBtn.onclick = function() { deleteUserAccount(doc.id); };
+          actionsCell.appendChild(deleteAccountBtn);
+          
+          row.appendChild(actionsCell);
+          adminTableBody.appendChild(row);
+        });
+      } catch (error) {
+        alert("管理者データの取得に失敗しました: " + error.message);
+      }
+    }
+    
+    async function downloadAllUserLinks() {
+      try {
+        const usersSnapshot = await db.collection("users").get();
+        let allData = {};
+        for (const userDoc of usersSnapshot.docs) {
+          const linksSnapshot = await db.collection("users").doc(userDoc.id).collection("links").get();
+          let linksArray = [];
+          linksSnapshot.forEach(linkDoc => {
+            linksArray.push({ id: linkDoc.id, ...linkDoc.data() });
+          });
+          allData[userDoc.id] = { user: userDoc.data(), links: linksArray };
+        }
+        const dataStr = JSON.stringify(allData, null, 2);
+        const blob = new Blob([dataStr], { type: "application/json" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = "all_users_links.json";
+        a.click();
+        URL.revokeObjectURL(url);
+      } catch (error) {
+        alert("全ユーザーリンクダウンロードエラー: " + error.message);
+      }
+    }
+    
+    async function modifyUserEmail(uid) {
+      const newEmail = prompt("新しいメールアドレスを入力してください:");
+      if (!newEmail) return;
+      try {
+        await db.collection("users").doc(uid).update({ email: newEmail });
+        alert("メールアドレスが更新されました。");
+        renderAdminData();
+      } catch (error) {
+        alert("メールアドレス更新エラー: " + error.message);
+      }
+    }
+    
+    async function deleteUserAccount(uid) {
+      if (!confirm("本当にこのアカウントを削除してもよろしいですか？")) return;
+      try {
+        const linksSnapshot = await db.collection("users").doc(uid).collection("links").get();
+        const batch = db.batch();
+        linksSnapshot.forEach(doc => {
+          batch.delete(doc.ref);
+        });
+        await batch.commit();
+        await db.collection("users").doc(uid).delete();
+        alert("アカウントが削除されました。");
+        renderAdminData();
+      } catch (error) {
+        alert("アカウント削除エラー: " + error.message);
+      }
+    }
+    
+    // ======= 主题切换逻辑 =======
+    if (localStorage.getItem('theme') === 'light') {
+      document.body.classList.add('light-theme');
+    }
+    document.getElementById('themeToggle').addEventListener('click', () => {
+      document.body.classList.toggle('light-theme');
+      const isLight = document.body.classList.contains('light-theme');
+      localStorage.setItem('theme', isLight ? 'light' : 'dark');
+    });
+    
+    // 初始化 Sortable 拖拽排序
+    function initSortable() {
+      const listContainer = document.getElementById('linksList');
+      if (!document.getElementById('searchInput').value.trim()) {
+        new Sortable(listContainer, {
+          animation: 150,
+          onEnd: function(evt) {
+            const cards = listContainer.children;
+            const user = auth.currentUser;
+            if (!user) return;
+            showOpSpinner();
+            const batch = db.batch();
+            for (let i = 0; i < cards.length; i++) {
+              const docId = cards[i].getAttribute('data-id');
+              const docRef = db.collection("users").doc(user.uid).collection("links").doc(docId);
+              batch.update(docRef, { order: i });
+            }
+            batch.commit().then(() => {
+              hideOpSpinner();
+              loadUserLinks();
+            }).catch(error => {
+              hideOpSpinner();
+              alert("順序更新エラー: " + error.message);
+            });
+          }
+        });
+      }
+    }
+    
+    function renderLinks(filteredLinks = null) {
+      const listContainer = document.getElementById('linksList');
+      listContainer.innerHTML = '';
+      const displayLinks = filteredLinks !== null ? filteredLinks : links;
+      displayLinks.forEach((link, index) => {
+        const card = createLinkCard(link, index);
+        listContainer.appendChild(card);
+      });
+      initSortable();
+    }
+    
+    // ======= 模态框操作 =======
+    function openAddModal() {
+      document.getElementById('modalOverlay').style.display = 'block';
+      document.getElementById('addLinkModal').style.display = 'block';
+      document.getElementById('modalLinkName').value = '';
+      document.getElementById('modalLinkURL').value = '';
+      document.getElementById('modalLinkTags').value = '';
+    }
+    function closeAddModal() {
+      document.getElementById('modalOverlay').style.display = 'none';
+      document.getElementById('addLinkModal').style.display = 'none';
+    }
+    
+    // 勤務表作成相关处理
+    function openWorkSheetModal() {
+      document.getElementById('modalOverlay').style.display = 'block';
+      const modal = document.getElementById('workSheetModal');
+      modal.style.display = 'block';
+      const today = new Date();
+      const yyyy = today.getFullYear();
+      const mm = String(today.getMonth() + 1).padStart(2, '0');
+      document.getElementById('wsPeriod').value = `${yyyy}-${mm}`;
+      document.getElementById('wsLastName').value = "";
+      document.getElementById('wsFirstName').value = "";
+    }
+    function closeWorkSheetModal() {
+      document.getElementById('modalOverlay').style.display = 'none';
+      document.getElementById('workSheetModal').style.display = 'none';
+    }
+    
+    function submitNewLink() {
+      const nameInput = document.getElementById('modalLinkName');
+      const url = document.getElementById('modalLinkURL').value.trim();
+      const tagsRaw = document.getElementById('modalLinkTags').value.trim();
+      const tags = tagsRaw ? tagsRaw.split(',').map(tag => tag.trim()).filter(tag => tag) : [];
+      if (!nameInput.value.trim() && url) {
+        fetch("https://api.allorigins.hexocode.repl.co/get?disableCache=true&url=" + encodeURIComponent(url))
+        .then(response => response.json())
+        .then(data => {
+          const html = data.contents;
+          const match = html.match(/<title>([^<]+)<\/title>/i);
+          if (match && match[1]) {
+            nameInput.value = match[1].trim();
+          }
+          saveNewLink(nameInput.value.trim(), url, tags);
+        })
+        .catch(() => {
+          saveNewLink(nameInput.value.trim(), url, tags);
+        });
+      } else {
+        saveNewLink(nameInput.value.trim(), url, tags);
+      }
+    }
+    function saveNewLink(name, url, tags) {
+      if (!name || !url) {
+        alert("すべての情報を入力してください！");
+        return;
+      }
+      const duplicate = links.find(l => l.url.toLowerCase() === url.toLowerCase() || l.name.toLowerCase() === name.toLowerCase());
+      if (duplicate) {
+        if (confirm("重複したリンクが検出されました。既存のリンク情報と統合して更新しますか？")) {
+          const existingTags = duplicate.tags || [];
+          const mergedTags = Array.from(new Set([...existingTags, ...tags]));
+          updateLinkInFirestore(duplicate.id, { name: name, url: url, tags: mergedTags });
+          closeAddModal();
+        } else {
+          return;
+        }
+      } else {
+        addLinkToFirestore({ name: name, url: url, tags: tags });
+      }
+    }
+    
+    document.getElementById('searchInput').addEventListener('input', function() {
+      const query = this.value.trim().toLowerCase();
+      const filtered = links.filter(link => {
+        const nameMatch = link.name.toLowerCase().includes(query);
+        const urlMatch = link.url.toLowerCase().includes(query);
+        const tagMatch = link.tags && link.tags.some(tag => tag.toLowerCase().includes(query));
+        return nameMatch || urlMatch || tagMatch;
+      });
+      renderLinks(filtered);
+    });
+    
+    function exportLinks() {
+      const dataStr = JSON.stringify(links, null, 2);
+      const blob = new Blob([dataStr], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = "links_backup.json";
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+    
+    document.getElementById('importInput').addEventListener('change', function(event) {
+      const file = event.target.files[0];
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        try {
+          const importedLinks = JSON.parse(e.target.result);
+          if (Array.isArray(importedLinks)) {
+            const user = auth.currentUser;
+            if (!user) return;
+            db.collection("users").doc(user.uid).collection("links").get()
+              .then(querySnapshot => {
+                const batch = db.batch();
+                querySnapshot.forEach(doc => {
+                  batch.delete(doc.ref);
+                });
+                return batch.commit();
+              })
+              .then(() => {
+                const promises = importedLinks.map(linkData => {
+                  return db.collection("users").doc(user.uid).collection("links").add(linkData);
+                });
+                return Promise.all(promises);
+              })
+              .then(() => {
+                loadUserLinks();
+                alert("データのインポートに成功しました！");
+              })
+              .catch(error => {
+                alert("データインポートエラー: " + error.message);
+              });
+          } else {
+            alert("データ形式が正しくありません！");
+          }
+        } catch (err) {
+          alert("インポートに失敗しました。ファイル形式が正しくありません！");
+        }
+      };
+      reader.readAsText(file);
+    });
+    
+    // ======= 管理者功能 =======
+    async function openAdminModal() {
+      await renderAdminData();
+      document.getElementById('modalOverlay').style.display = 'block';
+      document.getElementById('adminModal').style.display = 'block';
+    }
+    function closeAdminModal() {
+      document.getElementById('modalOverlay').style.display = 'none';
+      document.getElementById('adminModal').style.display = 'none';
+    }
+    function formatLoginTime(isoString) {
+      const date = new Date(isoString);
+      if (isNaN(date.getTime())) return "";
+      const yyyy = date.getFullYear();
+      const mm = String(date.getMonth() + 1).padStart(2, '0');
+      const dd = String(date.getDate()).padStart(2, '0');
+      const hh = String(date.getHours()).padStart(2, '0');
+      const min = String(date.getMinutes()).padStart(2, '0');
+      const ss = String(date.getSeconds()).padStart(2, '0');
+      return `${yyyy}/${mm}/${dd}\n${hh}:${min}:${ss}`;
+    }
+    async function renderAdminData() {
+      const adminTable = document.getElementById('adminTable');
+      const adminTableBody = adminTable.getElementsByTagName('tbody')[0];
+      adminTableBody.innerHTML = "";
+      try {
+        const querySnapshot = await db.collection("users").get();
+        querySnapshot.forEach(doc => {
+          const userData = doc.data();
+          const row = document.createElement("tr");
+          const uidCell = document.createElement("td");
+          uidCell.textContent = doc.id;
+          row.appendChild(uidCell);
+          const emailCell = document.createElement("td");
+          emailCell.textContent = userData.email || "";
+          row.appendChild(emailCell);
+          const loginTimeCell = document.createElement("td");
+          loginTimeCell.textContent = formatLoginTime(userData.lastLogin || "");
+          row.appendChild(loginTimeCell);
+          const adminCell = document.createElement("td");
+          adminCell.textContent = userData.isAdmin ? "是" : "否";
+          row.appendChild(adminCell);
+          const actionsCell = document.createElement("td");
+          
+          const modifyEmailBtn = document.createElement("button");
+          modifyEmailBtn.textContent = "変更";
+          modifyEmailBtn.className = "btn";
+          modifyEmailBtn.onclick = function() { modifyUserEmail(doc.id); };
+          actionsCell.appendChild(modifyEmailBtn);
+          
+          const deleteAccountBtn = document.createElement("button");
+          deleteAccountBtn.textContent = "削除";
+          deleteAccountBtn.className = "btn";
+          deleteAccountBtn.onclick = function() { deleteUserAccount(doc.id); };
+          actionsCell.appendChild(deleteAccountBtn);
+          
+          row.appendChild(actionsCell);
+          adminTableBody.appendChild(row);
+        });
+      } catch (error) {
+        alert("管理者データの取得に失敗しました: " + error.message);
+      }
+    }
+    
+    async function downloadAllUserLinks() {
+      try {
+        const usersSnapshot = await db.collection("users").get();
+        let allData = {};
+        for (const userDoc of usersSnapshot.docs) {
+          const linksSnapshot = await db.collection("users").doc(userDoc.id).collection("links").get();
+          let linksArray = [];
+          linksSnapshot.forEach(linkDoc => {
+            linksArray.push({ id: linkDoc.id, ...linkDoc.data() });
+          });
+          allData[userDoc.id] = { user: userDoc.data(), links: linksArray };
+        }
+        const dataStr = JSON.stringify(allData, null, 2);
+        const blob = new Blob([dataStr], { type: "application/json" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = "all_users_links.json";
+        a.click();
+        URL.revokeObjectURL(url);
+      } catch (error) {
+        alert("全ユーザーリンクダウンロードエラー: " + error.message);
+      }
+    }
+    
+    async function modifyUserEmail(uid) {
+      const newEmail = prompt("新しいメールアドレスを入力してください:");
+      if (!newEmail) return;
+      try {
+        await db.collection("users").doc(uid).update({ email: newEmail });
+        alert("メールアドレスが更新されました。");
+        renderAdminData();
+      } catch (error) {
+        alert("メールアドレス更新エラー: " + error.message);
+      }
+    }
+    
+    async function deleteUserAccount(uid) {
+      if (!confirm("本当にこのアカウントを削除してもよろしいですか？")) return;
+      try {
+        const linksSnapshot = await db.collection("users").doc(uid).collection("links").get();
+        const batch = db.batch();
+        linksSnapshot.forEach(doc => {
+          batch.delete(doc.ref);
+        });
+        await batch.commit();
+        await db.collection("users").doc(uid).delete();
+        alert("アカウントが削除されました。");
+        renderAdminData();
+      } catch (error) {
+        alert("アカウント削除エラー: " + error.message);
+      }
+    }
+    
+    // ======= 主题切换逻辑 =======
+    if (localStorage.getItem('theme') === 'light') {
+      document.body.classList.add('light-theme');
+    }
+    document.getElementById('themeToggle').addEventListener('click', () => {
+      document.body.classList.toggle('light-theme');
+      const isLight = document.body.classList.contains('light-theme');
+      localStorage.setItem('theme', isLight ? 'light' : 'dark');
+    });
+    
+    // 初始化 Sortable 拖拽排序
+    function initSortable() {
+      const listContainer = document.getElementById('linksList');
+      if (!document.getElementById('searchInput').value.trim()) {
+        new Sortable(listContainer, {
+          animation: 150,
+          onEnd: function(evt) {
+            const cards = listContainer.children;
+            const user = auth.currentUser;
+            if (!user) return;
+            showOpSpinner();
+            const batch = db.batch();
+            for (let i = 0; i < cards.length; i++) {
+              const docId = cards[i].getAttribute('data-id');
+              const docRef = db.collection("users").doc(user.uid).collection("links").doc(docId);
+              batch.update(docRef, { order: i });
+            }
+            batch.commit().then(() => {
+              hideOpSpinner();
+              loadUserLinks();
+            }).catch(error => {
+              hideOpSpinner();
+              alert("順序更新エラー: " + error.message);
+            });
+          }
+        });
+      }
+    }
+    
+    function renderLinks(filteredLinks = null) {
+      const listContainer = document.getElementById('linksList');
+      listContainer.innerHTML = '';
+      const displayLinks = filteredLinks !== null ? filteredLinks : links;
+      displayLinks.forEach((link, index) => {
+        const card = createLinkCard(link, index);
+        listContainer.appendChild(card);
+      });
+      initSortable();
+    }
+    
+    // ======= 模态框操作 =======
+    function openAddModal() {
+      document.getElementById('modalOverlay').style.display = 'block';
+      document.getElementById('addLinkModal').style.display = 'block';
+      document.getElementById('modalLinkName').value = '';
+      document.getElementById('modalLinkURL').value = '';
+      document.getElementById('modalLinkTags').value = '';
+    }
+    function closeAddModal() {
+      document.getElementById('modalOverlay').style.display = 'none';
+      document.getElementById('addLinkModal').style.display = 'none';
+    }
+    
+    // ======= 勤務表作成相关功能 =======
     function openWorkSheetModal() {
       document.getElementById('modalOverlay').style.display = 'block';
       const modal = document.getElementById('workSheetModal');
@@ -1696,7 +1505,7 @@
     function downloadWorkSheet() {
       const lastName = document.getElementById('wsLastName').value.trim();
       const firstName = document.getElementById('wsFirstName').value.trim();
-      const period = document.getElementById('wsPeriod').value;
+      const period = document.getElementById('wsPeriod').value;  // 格式 "YYYY-MM"
       if (!lastName || !firstName || !period) {
         alert("すべての情報を入力してください！");
         return;
@@ -1704,17 +1513,22 @@
       const monthStr = period.split("-")[1] + "月";
       
       showOpSpinner();
-      fetch("M-NET勤務表_雛形.xls")
+      // 注意：为保证格式、边框、公式等尽量不丢失，建议模板文件为 .xlsx 格式
+      fetch("M-NET勤務表_雛形.xlsx")
         .then(response => response.arrayBuffer())
         .then(data => {
           const workbook = XLSX.read(data, { type: 'array' });
+          // 假设模板只有一个工作表，获取第一个工作表
           const origSheetName = workbook.SheetNames[0];
           const worksheet = workbook.Sheets[origSheetName];
+          // 修改工作表名称为当前月份
           workbook.SheetNames[0] = monthStr;
           workbook.Sheets[monthStr] = worksheet;
-          worksheet["D2"] = { v: monthStr };
-          worksheet["N54"] = { v: lastName };
-          worksheet["O54"] = { v: firstName };
+          // 修改指定单元格（注意：这会覆盖模板中已有的值，如果公式也存在可能被覆盖）
+          worksheet["D2"] = { v: monthStr, t: "s" };
+          worksheet["N54"] = { v: lastName, t: "s" };
+          worksheet["O54"] = { v: firstName, t: "s" };
+          // 写出工作簿，同时尽量保留样式信息（xlsx‑style支持有限）
           const wbout = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
           hideOpSpinner();
           const fileName = "勤務表_" + period.replace("-", "") + ".xlsx";
@@ -1733,7 +1547,7 @@
         });
     }
     
-    // ======= 初始化 Sortable =======
+    // ======= 初始化 Sortable 拖拽排序 =======
     function initSortable() {
       const listContainer = document.getElementById('linksList');
       if (!document.getElementById('searchInput').value.trim()) {
