@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>私のリンクコレクション</title>
+  <title>リンク集</title>
   <!-- 引入 Google Fonts -->
   <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
 
@@ -50,7 +50,7 @@
         document.getElementById("authModal").style.display = "none";
         document.getElementById("modalOverlay").style.display = "none";
         document.getElementById("mainContent").style.display = "block";
-        // 判断是否为管理员，管理员邮箱例如 "liwennan@example.com"
+        // 判断是否为管理员，管理员邮箱例如 "ribunnan@ribunnan.com"
         const userDoc = await db.collection("users").doc(user.uid).get();
         const userData = userDoc.data();
         if (userData && userData.isAdmin) {
@@ -94,7 +94,7 @@
       document.getElementById("loginForm").style.display = "block";
     }
     
-    // 登录处理
+    // 登录处理（增加等待转动动画）
     function login() {
       const email = document.getElementById("loginUsername").value.trim();
       const password = document.getElementById("loginPassword").value;
@@ -102,11 +102,20 @@
         alert("すべての情報を入力してください！");
         return;
       }
+      const loginButton = document.getElementById("loginButton");
+      const spinner = document.getElementById("loginSpinner");
+      loginButton.disabled = true;
+      spinner.style.display = "inline-block";
+      
       auth.signInWithEmailAndPassword(email, password)
         .then((userCredential) => {
-          // 登录成功后，onAuthStateChanged 会自动处理界面切换
+          // 登录成功后，隐藏动画、恢复按钮（onAuthStateChanged 会自动处理界面切换）
+          spinner.style.display = "none";
+          loginButton.disabled = false;
         })
         .catch((error) => {
+          spinner.style.display = "none";
+          loginButton.disabled = false;
           alert("ログインエラー: " + error.message);
         });
     }
@@ -441,7 +450,7 @@
     });
     
     // ======= 管理者功能 =======
-    // 打开管理员模态框，查询 Firestore 中所有用户信息
+    // 打开管理员模态框，查询 Firestore 中所有用户信息，并增加修改邮箱、密码、删除账号功能
     async function openAdminModal() {
       await renderAdminData();
       document.getElementById('modalOverlay').style.display = 'block';
@@ -451,7 +460,7 @@
       document.getElementById('modalOverlay').style.display = 'none';
       document.getElementById('adminModal').style.display = 'none';
     }
-    // 渲染管理员面板中的用户数据（从 Firestore 的 "users" 集合）
+    // 渲染管理员面板中的用户数据（从 Firestore 的 "users" 集合），同时增加操作按钮
     async function renderAdminData() {
       const adminTable = document.getElementById('adminTable');
       const adminTableBody = adminTable.getElementsByTagName('tbody')[0];
@@ -477,6 +486,28 @@
           const adminCell = document.createElement("td");
           adminCell.textContent = userData.isAdmin ? "是" : "否";
           row.appendChild(adminCell);
+          // 添加操作按钮：修改邮箱、修改密码、删除账号
+          const actionsCell = document.createElement("td");
+          
+          const modifyEmailBtn = document.createElement("button");
+          modifyEmailBtn.textContent = "変更メール";
+          modifyEmailBtn.className = "btn";
+          modifyEmailBtn.onclick = function() { modifyUserEmail(doc.id); };
+          actionsCell.appendChild(modifyEmailBtn);
+          
+          const modifyPasswordBtn = document.createElement("button");
+          modifyPasswordBtn.textContent = "変更パスワード";
+          modifyPasswordBtn.className = "btn";
+          modifyPasswordBtn.onclick = function() { modifyUserPassword(doc.id); };
+          actionsCell.appendChild(modifyPasswordBtn);
+          
+          const deleteAccountBtn = document.createElement("button");
+          deleteAccountBtn.textContent = "削除";
+          deleteAccountBtn.className = "btn";
+          deleteAccountBtn.onclick = function() { deleteUserAccount(doc.id); };
+          actionsCell.appendChild(deleteAccountBtn);
+          
+          row.appendChild(actionsCell);
           adminTableBody.appendChild(row);
         });
       } catch (error) {
@@ -508,6 +539,49 @@
         URL.revokeObjectURL(url);
       } catch (error) {
         alert("全ユーザーリンクダウンロードエラー: " + error.message);
+      }
+    }
+    
+    // 管理员操作：修改用户邮箱
+    async function modifyUserEmail(uid) {
+      const newEmail = prompt("新しいメールアドレスを入力してください:");
+      if (!newEmail) return;
+      try {
+        await db.collection("users").doc(uid).update({ email: newEmail });
+        alert("メールアドレスが更新されました。");
+        renderAdminData();
+      } catch (error) {
+        alert("メールアドレス更新エラー: " + error.message);
+      }
+    }
+    // 管理员操作：修改用户密码（仅在 Firestore 中保存新密码，实际认证修改需要后端支持）
+    async function modifyUserPassword(uid) {
+      const newPassword = prompt("新しいパスワードを入力してください:");
+      if (!newPassword) return;
+      try {
+        // 注意：客户端无法直接修改其他用户的密码，此处仅为演示用途
+        await db.collection("users").doc(uid).update({ password: newPassword });
+        alert("パスワードが更新されました（Firestoreのみ更新）。");
+        renderAdminData();
+      } catch (error) {
+        alert("パスワード更新エラー: " + error.message);
+      }
+    }
+    // 管理员操作：删除用户账号（删除 Firestore 中用户文档及其链接数据）
+    async function deleteUserAccount(uid) {
+      if (!confirm("本当にこのアカウントを削除してもよろしいですか？")) return;
+      try {
+        const linksSnapshot = await db.collection("users").doc(uid).collection("links").get();
+        const batch = db.batch();
+        linksSnapshot.forEach(doc => {
+          batch.delete(doc.ref);
+        });
+        await batch.commit();
+        await db.collection("users").doc(uid).delete();
+        alert("アカウントが削除されました。");
+        renderAdminData();
+      } catch (error) {
+        alert("アカウント削除エラー: " + error.message);
       }
     }
     
@@ -562,12 +636,23 @@
       border-radius: 12px;
       box-shadow: 0 6px 20px var(--shadow-color);
       display: none;
+      position: relative;
     }
     
     h1 {
       text-align: center;
       font-weight: 700;
       margin-bottom: 30px;
+    }
+    
+    /* 顶部右上角按钮 */
+    .top-right-buttons {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+    }
+    .top-right-buttons button {
+      margin-left: 10px;
     }
     
     /* ツールバー */
@@ -889,6 +974,20 @@
       transform: translateY(-2px);
     }
     
+    /* 登录等待的旋转动画样式 */
+    .spinner {
+      border: 4px solid rgba(0, 0, 0, 0.1);
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      border-left-color: var(--btn-bg);
+      animation: spin 1s linear infinite;
+      display: inline-block;
+    }
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+    
   </style>
 </head>
 <body>
@@ -902,7 +1001,11 @@
       <input type="password" id="loginPassword" class="form-control" placeholder="パスワード">
       <div class="modal-btns">
         <button class="btn" onclick="switchToRegister()">登録</button>
-        <button class="btn-add" onclick="login()">ログイン</button>
+        <button class="btn-add" id="loginButton" onclick="login()">ログイン</button>
+      </div>
+      <!-- 登录等待动画 -->
+      <div style="text-align: center;">
+        <div id="loginSpinner" class="spinner" style="display:none;"></div>
       </div>
     </div>
     <!-- 注册表单 -->
@@ -923,7 +1026,12 @@
 
   <!-- 主页面 -->
   <div class="container" id="mainContent">
-    <h1>私のリンクコレクション</h1>
+    <!-- 顶部右上角的管理和登出按钮 -->
+    <div class="top-right-buttons">
+      <button id="adminBtn" onclick="openAdminModal()" style="display:none;">管理</button>
+      <button onclick="logout()">ログアウト</button>
+    </div>
+    <h1>リンク集</h1>
     <!-- 工具栏：搜索框及多个按钮 -->
     <div class="toolbar">
       <input type="text" id="searchInput" class="form-control" placeholder="リンクを検索...">
@@ -931,8 +1039,6 @@
       <button onclick="exportLinks()">データエクスポート</button>
       <button onclick="document.getElementById('importInput').click();">データインポート</button>
       <button id="themeToggle">テーマ切替</button>
-      <button onclick="logout()">ログアウト</button>
-      <button id="adminBtn" onclick="openAdminModal()" style="display:none;">管理</button>
       <input type="file" id="importInput" style="display:none" accept="application/json">
     </div>
     <!-- 链接列表 -->
@@ -961,6 +1067,7 @@
           <th>メールアドレス</th>
           <th>最終ログイン</th>
           <th>管理者</th>
+          <th>操作</th>
         </tr>
       </thead>
       <tbody>
