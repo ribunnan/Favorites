@@ -235,24 +235,12 @@
       margin-top: 0;
       margin-bottom: 20px;
     }
-    /* 将切换与提交按钮分两行显示，减少误点 */
-    .modal-btns {
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-      margin-top: 20px;
-    }
+    /* 将按钮放在同一行，间距较小 */
     .modal-btns-row {
       display: flex;
-      justify-content: space-between;
-    }
-    #authModal .btn-add {
-      background-color: var(--btn-bg);
-      color: #fff;
-    }
-    #authModal .btn-add:hover {
-      background-color: var(--btn-bg-hover);
-      transform: translateY(-2px);
+      justify-content: center;
+      gap: 8px;
+      margin-top: 10px;
     }
     
     /* 模态框遮罩层 */
@@ -329,8 +317,8 @@
       border: 1px solid var(--border-color);
       border-radius: 8px;
       width: 90%;
-      max-width: 600px;
-      padding: 20px;
+      max-width: 500px;
+      padding: 15px;
       z-index: 2200;
       box-shadow: 0 6px 20px var(--shadow-color);
       display: none;
@@ -346,13 +334,14 @@
       width: 100%;
       border-collapse: collapse;
     }
-    /* 调整表格内边距与行高，使每行高度合适 */
+    /* 调整表格内边距与行高 */
     #adminModal th, #adminModal td {
       padding: 6px 8px;
       border: 1px solid var(--border-color);
       text-align: left;
       font-size: 14px;
       line-height: 1.4;
+      white-space: pre-wrap; /* 保持换行 */
     }
     #adminModal th {
       background-color: var(--btn-bg);
@@ -413,11 +402,9 @@
       <h2>ログイン</h2>
       <input type="text" id="loginUsername" class="form-control" placeholder="メールアドレス">
       <input type="password" id="loginPassword" class="form-control" placeholder="パスワード">
-      <div class="modal-btns">
-        <div class="modal-btns-row">
-          <button class="btn-add" id="loginButton" onclick="login()">ログイン</button>
-          <button class="btn-add" onclick="switchToRegister()">アカウント作成</button>
-        </div>
+      <div class="modal-btns-row">
+        <button class="btn-add" id="loginButton" onclick="login()">ログイン</button>
+        <button class="btn-add" onclick="switchToRegister()">アカウント作成</button>
       </div>
       <div style="text-align: center;">
         <div id="loginSpinner" class="spinner" style="display:none;"></div>
@@ -429,13 +416,9 @@
       <input type="text" id="registerUsername" class="form-control" placeholder="メールアドレス">
       <input type="password" id="registerPassword" class="form-control" placeholder="パスワード">
       <input type="password" id="registerPasswordConfirm" class="form-control" placeholder="パスワード確認">
-      <div class="modal-btns">
-        <div class="modal-btns-row">
-          <button class="btn" onclick="switchToLogin()">ログインに戻る</button>
-        </div>
-        <div class="modal-btns-row">
-          <button class="btn-add" onclick="register()">登録</button>
-        </div>
+      <div class="modal-btns-row">
+        <button class="btn-add" onclick="register()">登録</button>
+        <button class="btn-add" onclick="switchToLogin()">ログインに戻る</button>
       </div>
     </div>
   </div>
@@ -447,7 +430,7 @@
     <!-- 顶部右上角的管理和登出按钮 -->
     <div class="top-right-buttons">
       <button id="adminBtn" onclick="openAdminModal()" style="display:none;">管理</button>
-      <button onclick="logout()">ログアウト</button>
+      <button onclick="confirmLogout()">ログアウト</button>
     </div>
     <h1>リンク集</h1>
     <!-- 工具栏：搜索框及多个按钮 -->
@@ -630,7 +613,12 @@
         });
     }
     
-    // 登出处理
+    // 退出登录时加入确认弹窗
+    function confirmLogout() {
+      if (confirm("本当にログアウトしてもよろしいですか？")) {
+        logout();
+      }
+    }
     function logout() {
       auth.signOut().catch((error) => {
         alert("ログアウトエラー: " + error.message);
@@ -946,6 +934,18 @@
       document.getElementById('modalOverlay').style.display = 'none';
       document.getElementById('adminModal').style.display = 'none';
     }
+    // 辅助函数：格式化最后登录时间，格式为 yyyy/mm/dd 换行 hh:mm:ss（24 小时制）
+    function formatLoginTime(isoString) {
+      const date = new Date(isoString);
+      if (isNaN(date.getTime())) return "";
+      const yyyy = date.getFullYear();
+      const mm = String(date.getMonth() + 1).padStart(2, '0');
+      const dd = String(date.getDate()).padStart(2, '0');
+      const hh = String(date.getHours()).padStart(2, '0');
+      const min = String(date.getMinutes()).padStart(2, '0');
+      const ss = String(date.getSeconds()).padStart(2, '0');
+      return `${yyyy}/${mm}/${dd}\n${hh}:${min}:${ss}`;
+    }
     // 渲染管理员面板中的用户数据（从 Firestore 的 "users" 集合），同时增加操作按钮
     async function renderAdminData() {
       const adminTable = document.getElementById('adminTable');
@@ -964,9 +964,9 @@
           const emailCell = document.createElement("td");
           emailCell.textContent = userData.email || "";
           row.appendChild(emailCell);
-          // 显示最后登录时间
+          // 显示最后登录时间：格式 yyyy/mm/dd 换行 hh:mm:ss
           const loginTimeCell = document.createElement("td");
-          loginTimeCell.textContent = userData.lastLogin || "";
+          loginTimeCell.textContent = formatLoginTime(userData.lastLogin || "");
           row.appendChild(loginTimeCell);
           // 显示是否为管理员
           const adminCell = document.createElement("td");
@@ -1000,7 +1000,6 @@
       try {
         const usersSnapshot = await db.collection("users").get();
         let allData = {};
-        // 对每个用户获取其链接数据
         for (const userDoc of usersSnapshot.docs) {
           const linksSnapshot = await db.collection("users").doc(userDoc.id).collection("links").get();
           let linksArray = [];
@@ -1054,7 +1053,6 @@
     }
     
     // ======= 主题切换逻辑 =======
-    // 初始化：检查 localStorage 是否保存了主题设置
     if (localStorage.getItem('theme') === 'light') {
       document.body.classList.add('light-theme');
     }
