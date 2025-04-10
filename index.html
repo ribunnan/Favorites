@@ -474,7 +474,7 @@
   <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
   
   <script>
-    // Firebase の設定（你的 Firebase 控制台中的配置）
+    // Firebase の设置（你的 Firebase 控制台中的配置）
     var firebaseConfig = {
       apiKey: "AIzaSyCDlSoBXuNOEQOPIvx1metUAPctqt6xcFs",
       authDomain: "mylinkcollection-abe80.firebaseapp.com",
@@ -485,12 +485,14 @@
     };
     // 初始化 Firebase
     firebase.initializeApp(firebaseConfig);
+    // 设置持久化认证，以保证用户退出后依旧使用同一个账户
+    firebase.auth().setPersistence(firebase.auth.Auth.Persistence.LOCAL);
     const db = firebase.firestore();
     const auth = firebase.auth();
     
     // 定义全局变量
     let links = []; // 当前用户的链接数组
-    // 使用一个好看的默认图标（链接图标）
+    // 使用一个好看的默认图标（来自 Wikimedia Commons 链接图标）
     const fallbackIcon = "https://upload.wikimedia.org/wikipedia/commons/thumb/8/88/OOjs_UI_icon_link.svg/32px-OOjs_UI_icon_link.svg.png";
     
     // 显示/隐藏操作等待的 Spinner
@@ -511,7 +513,7 @@
       }
     }
     
-    // 认证状态监听器（自动根据登录状态显示或隐藏相应界面）
+    // 认证状态监听器
     auth.onAuthStateChanged(async (user) => {
       if (user) {
         await updateUserProfile(user);
@@ -615,7 +617,7 @@
     }
     
     // ======= 链接数据操作（Firestore） =======
-    // 加载当前登录用户的链接，按 order 排序
+    // 加载当前用户的链接，按 order 排序
     function loadUserLinks() {
       const user = auth.currentUser;
       if (!user) return;
@@ -635,7 +637,7 @@
         });
     }
     
-    // 新增链接，设定 order 字段为当前时间戳（保证排序）
+    // 新增链接时设定 order 字段为当前时间戳
     function addLinkToFirestore(linkData) {
       const user = auth.currentUser;
       if (!user) return;
@@ -654,7 +656,7 @@
         });
     }
     
-    // 更新链接并显示操作等待动画
+    // 更新链接
     function updateLinkInFirestore(linkId, linkData) {
       const user = auth.currentUser;
       if (!user) return;
@@ -671,7 +673,7 @@
         });
     }
     
-    // 删除链接时显示等待动画
+    // 删除链接
     function deleteLinkFromFirestore(linkId) {
       const user = auth.currentUser;
       if (!user) return;
@@ -692,7 +694,6 @@
     function createLinkCard(link, index) {
       const card = document.createElement('div');
       card.className = 'link-card';
-      // 保存链接的 ID到 data-id 属性，用于排序更新
       card.setAttribute('data-id', link.id);
       
       const header = document.createElement('div');
@@ -802,7 +803,7 @@
       card.appendChild(cancelButton);
     }
     
-    // 渲染链接列表
+    // 渲染链接列表并初始化拖拽排序
     function renderLinks(filteredLinks = null) {
       const listContainer = document.getElementById('linksList');
       listContainer.innerHTML = '';
@@ -811,31 +812,7 @@
         const card = createLinkCard(link, index);
         listContainer.appendChild(card);
       });
-      // 使用 Sortable.js，实现拖拽排序（仅当没有搜索时启用）
-      if (!document.getElementById('searchInput').value.trim()) {
-        new Sortable(listContainer, {
-          animation: 150,
-          onEnd: function(evt) {
-            const cards = listContainer.children;
-            const user = auth.currentUser;
-            if (!user) return;
-            showOpSpinner();
-            const batch = db.batch();
-            for (let i = 0; i < cards.length; i++) {
-              const docId = cards[i].getAttribute('data-id');
-              const docRef = db.collection("users").doc(user.uid).collection("links").doc(docId);
-              batch.update(docRef, { order: i });
-            }
-            batch.commit().then(() => {
-              hideOpSpinner();
-              loadUserLinks();
-            }).catch(error => {
-              hideOpSpinner();
-              alert("順序更新エラー: " + error.message);
-            });
-          }
-        });
-      }
+      initSortable();
     }
     
     // ======= 模态框操作 =======
@@ -1064,7 +1041,7 @@
       localStorage.setItem('theme', isLight ? 'light' : 'dark');
     });
     
-    // 初始化 Sortable 拖拽排序，并在 onEnd 时批量更新 order 值
+    // 初始化 Sortable 拖拽排序，并在 onEnd 时更新 order 值
     function initSortable() {
       const listContainer = document.getElementById('linksList');
       if (!document.getElementById('searchInput').value.trim()) {
