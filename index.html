@@ -6,14 +6,12 @@
   <title>リンク集</title>
   <!-- 引入 Google Fonts -->
   <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
-
-  <!-- Firebase SDK（compat 版） -->
+  
+  <!-- Firebase SDK（compat版） -->
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
-  <!-- 使用 xlsx‑style 库，注意模板建议为 .xlsx 格式 -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx-style/0.8.13/xlsx.full.min.js"></script>
-
+  
   <style>
     /* 新主题设置 */
     :root {
@@ -48,7 +46,8 @@
     body::before {
       content: "";
       position: fixed;
-      top: 0; left: 0;
+      top: 0; 
+      left: 0;
       width: 100%;
       height: 100%;
       background: radial-gradient(ellipse at center, rgba(0,0,0,0.3) 0%, transparent 80%);
@@ -81,15 +80,11 @@
       right: 10px;
       display: flex;
       gap: 8px;
-      flex-wrap: wrap;
+      flex-wrap: nowrap;
       z-index: 2;
     }
     .top-right-buttons button {
       flex: none;
-    }
-    /* “勤務表作成”按钮（绿色） */
-    #workSheetBtn {
-      background-color: #4CAF50;
     }
     
     /* 工具栏 */
@@ -98,7 +93,7 @@
       align-items: center;
       flex-wrap: wrap;
       gap: 15px;
-      margin-bottom: 30px;
+      margin-bottom: 15px; /* 缩小与标签列表的间距 */
     }
     .toolbar input.form-control {
       flex: 1 1 240px;
@@ -137,6 +132,30 @@
       height: 1px;
       background-color: var(--border-color);
       margin: 30px 0;
+    }
+    
+    /* 标签列表样式 */
+    #tagList {
+      margin: 0 0 20px 0;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    #tagList .tag-item {
+      background-color: var(--border-color);
+      color: var(--text-color);
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 14px;
+      cursor: pointer;
+      transition: background-color 0.3s;
+    }
+    #tagList .tag-item:hover {
+      background-color: var(--btn-bg-hover);
+    }
+    #tagList .tag-item.active {
+      background-color: var(--btn-bg);
+      color: #fff;
     }
     
     /* 链接卡片 */
@@ -206,16 +225,14 @@
       background-color: var(--btn-bg-hover);
       transform: translateY(-2px);
     }
-    .link-btn {
-      margin-right: 8px;
+    
+    /* 编辑模式下按钮容器 */
+    .edit-buttons {
+      display: flex;
+      gap: 10px;
+      margin-top: 10px;
     }
     
-    .edit-container {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
-      margin-bottom: 15px;
-    }
     .edit-input {
       flex: 1;
       padding: 10px;
@@ -265,7 +282,7 @@
       left: 0;
       width: 100%;
       height: 100%;
-      background: rgba(0, 0, 0, 0.5);
+      background: rgba(0,0,0,0.5);
       z-index: 2050;
       display: none;
     }
@@ -374,62 +391,6 @@
       transform: translateY(-2px);
     }
     
-    /* 勤務表作成 模态框 */
-    #workSheetModal {
-      position: fixed;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      background-color: var(--container-bg);
-      border: 1px solid var(--border-color);
-      border-radius: 8px;
-      width: 90%;
-      max-width: 400px;
-      padding: 20px;
-      z-index: 2200;
-      box-shadow: 0 6px 20px var(--shadow-color);
-      display: none;
-    }
-    #workSheetModal h2 {
-      text-align: center;
-      margin-top: 0;
-      margin-bottom: 20px;
-    }
-    #workSheetModal .modal-btns {
-      display: flex;
-      justify-content: flex-end;
-      gap: 8px;
-      margin-top: 10px;
-    }
-    #workSheetModal label {
-      display: block;
-      margin-top: 10px;
-    }
-    #workSheetModal input {
-      width: 100%;
-      padding: 8px;
-      margin-top: 4px;
-      border: 1px solid var(--border-color);
-      border-radius: 4px;
-      background-color: var(--container-bg);
-      color: var(--text-color);
-      box-sizing: border-box;
-    }
-    
-    /* 登录等待 Spinner */
-    .spinner {
-      border: 4px solid rgba(0,0,0,0.1);
-      width: 24px;
-      height: 24px;
-      border-radius: 50%;
-      border-left-color: var(--btn-bg);
-      animation: spin 1s linear infinite;
-      display: inline-block;
-    }
-    @keyframes spin {
-      to { transform: rotate(360deg); }
-    }
-    
     /* ======= 移动端响应式设计 ======= */
     @media (max-width: 600px) {
       .container {
@@ -442,8 +403,8 @@
       }
       .top-right-buttons {
         position: static;
-        flex-wrap: wrap;
-        justify-content: space-between;
+        justify-content: flex-end; /* 移动端统一向右对齐 */
+        gap: 8px;
         margin-bottom: 10px;
       }
       .toolbar input.form-control {
@@ -501,30 +462,15 @@
   <!-- 模态框遮罩层 -->
   <div id="modalOverlay" style="display:none;"></div>
   
-  <!-- 勤務表作成 模态框 -->
-  <div id="workSheetModal" style="display:none;">
-    <h2>勤務表作成</h2>
-    <label for="wsLastName">姓（例：山田）</label>
-    <input type="text" id="wsLastName" placeholder="姓">
-    <label for="wsFirstName">名（例：太郎）</label>
-    <input type="text" id="wsFirstName" placeholder="名">
-    <label for="wsPeriod">勤務表期間（年月）</label>
-    <input type="month" id="wsPeriod">
-    <div class="modal-btns">
-      <button class="btn" onclick="closeWorkSheetModal()">キャンセル</button>
-      <button class="btn-add" onclick="downloadWorkSheet()">ダウンロード</button>
-    </div>
-  </div>
-  
   <!-- 主页面 -->
   <div class="container" id="mainContent">
     <!-- 顶部右上角按钮 -->
     <div class="top-right-buttons">
       <button id="adminBtn" onclick="openAdminModal()" style="display:none;">管理</button>
-      <button id="workSheetBtn" onclick="openWorkSheetModal()">勤務表作成</button>
       <button onclick="confirmLogout()">ログアウト</button>
     </div>
     <h1>リンク集</h1>
+    
     <!-- 工具栏 -->
     <div class="toolbar">
       <input type="text" id="searchInput" class="form-control" placeholder="リンクを検索...">
@@ -534,6 +480,10 @@
       <button id="themeToggle">テーマ切替</button>
       <input type="file" id="importInput" style="display:none" accept="application/json">
     </div>
+    
+    <!-- 标签列表 -->
+    <div id="tagList"></div>
+    
     <!-- 链接列表 -->
     <div id="linksList"></div>
   </div>
@@ -580,7 +530,7 @@
   <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
   
   <script>
-    // Firebase 配置（请确保下面的配置正确，对应你的 Firebase 项目）
+    // Firebase 配置（请确保下面配置正确）
     var firebaseConfig = {
       apiKey: "AIzaSyCDlSoBXuNOEQOPIvx1metUAPctqt6xcFs",
       authDomain: "mylinkcollection-abe80.firebaseapp.com",
@@ -597,7 +547,7 @@
     // 全局变量，存储当前用户链接
     let links = [];
     
-    // 获取 favicon 的函数：加载失败则返回空字符串（不显示图标）
+    // 获取 favicon 的函数，加载失败则返回空字符串（不显示图标）
     function getFaviconUrl(url) {
       try {
         const urlObj = new URL(url);
@@ -730,6 +680,7 @@
             links.push(data);
           });
           renderLinks();
+          renderTagList();
         })
         .catch((error) => {
           console.error("リンクの読み込みに失敗しました:", error);
@@ -799,7 +750,6 @@
       icon.className = 'link-icon';
       icon.src = getFaviconUrl(link.url);
       icon.alt = 'favicon';
-      // 加载失败时隐藏图标
       icon.onerror = function() { this.style.display = 'none'; };
       header.appendChild(icon);
       
@@ -872,6 +822,10 @@
       
       card.appendChild(editContainer);
       
+      // 将保存和取消按钮放入一个容器中，并添加间距
+      const editButtons = document.createElement('div');
+      editButtons.className = 'edit-buttons';
+      
       const saveButton = document.createElement('button');
       saveButton.textContent = '保存';
       saveButton.className = 'btn';
@@ -885,7 +839,7 @@
           alert("リンク名とURLは空にできません！");
         }
       };
-      card.appendChild(saveButton);
+      editButtons.appendChild(saveButton);
       
       const cancelButton = document.createElement('button');
       cancelButton.textContent = 'キャンセル';
@@ -893,7 +847,9 @@
       cancelButton.onclick = function() {
         loadUserLinks();
       };
-      card.appendChild(cancelButton);
+      editButtons.appendChild(cancelButton);
+      
+      card.appendChild(editButtons);
     }
     
     function renderLinks(filteredLinks = null) {
@@ -962,6 +918,7 @@
         saveNewLink(nameInput.value.trim(), url, tags);
       }
     }
+    
     function saveNewLink(name, url, tags) {
       if (!name || !url) {
         alert("すべての情報を入力してください！");
@@ -991,6 +948,7 @@
         return nameMatch || urlMatch || tagMatch;
       });
       renderLinks(filtered);
+      renderTagList(); // 根据过滤后链接更新标签（或可选择不更新标签列表，使标签列表总是所有标签）
     });
     
     function exportLinks() {
@@ -1172,73 +1130,221 @@
       localStorage.setItem('theme', isLight ? 'light' : 'dark');
     });
     
-    // ======= 勤務表作成相关功能 =======
-    function openWorkSheetModal() {
-      document.getElementById('modalOverlay').style.display = 'block';
-      const modal = document.getElementById('workSheetModal');
-      modal.style.display = 'block';
-      const today = new Date();
-      const yyyy = today.getFullYear();
-      const mm = String(today.getMonth() + 1).padStart(2, '0');
-      document.getElementById('wsPeriod').value = `${yyyy}-${mm}`;
-      document.getElementById('wsLastName').value = "";
-      document.getElementById('wsFirstName').value = "";
-    }
-    function closeWorkSheetModal() {
-      document.getElementById('modalOverlay').style.display = 'none';
-      document.getElementById('workSheetModal').style.display = 'none';
+    // ======= 初始化 Sortable 拖拽排序 =======
+    function initSortable() {
+      const listContainer = document.getElementById('linksList');
+      if (!document.getElementById('searchInput').value.trim()) {
+        new Sortable(listContainer, {
+          animation: 150,
+          fallbackOnBody: true,
+          touchStartThreshold: 5,
+          swapThreshold: 0.65,
+          onEnd: function(evt) {
+            const cards = listContainer.children;
+            const user = auth.currentUser;
+            if (!user) return;
+            showOpSpinner();
+            const batch = db.batch();
+            for (let i = 0; i < cards.length; i++) {
+              const docId = cards[i].getAttribute('data-id');
+              const docRef = db.collection("users").doc(user.uid).collection("links").doc(docId);
+              batch.update(docRef, { order: i });
+            }
+            batch.commit().then(() => {
+              hideOpSpinner();
+              loadUserLinks();
+            }).catch(error => {
+              hideOpSpinner();
+              alert("順序更新エラー: " + error.message);
+            });
+          }
+        });
+      }
     }
     
-    function downloadWorkSheet() {
-      const lastName = document.getElementById('wsLastName').value.trim();
-      const firstName = document.getElementById('wsFirstName').value.trim();
-      const period = document.getElementById('wsPeriod').value;  // 格式 "YYYY-MM"
-      if (!lastName || !firstName || !period) {
-        alert("すべての情報を入力してください！");
-        return;
-      }
-      // 生成工作表名称，如 "08月"
-      const monthStr = period.split("-")[1] + "月";
-      
-      showOpSpinner();
-      // 使用明确相对路径获取模板文件（template.xlsx 与当前 HTML 文件位于同一目录）
-      fetch("./template.xlsx")
-        .then(response => {
-          if (!response.ok) {
-            throw new Error("Template file not found.");
-          }
-          return response.arrayBuffer();
-        })
-        .then(data => {
-          const workbook = XLSX.read(data, { type: 'array' });
-          // 假设模板只有一个工作表
-          const origSheetName = workbook.SheetNames[0];
-          const worksheet = workbook.Sheets[origSheetName];
-          // 修改工作表名称为当前月份，并将工作表保存到 workbook.Sheets 中
-          workbook.SheetNames[0] = monthStr;
-          workbook.Sheets[monthStr] = worksheet;
-          // 修改指定单元格：D2 改为当前月份、N54 改为姓、O54 改为名
-          worksheet["D2"] = { v: monthStr, t: "s" };
-          worksheet["N54"] = { v: lastName, t: "s" };
-          worksheet["O54"] = { v: firstName, t: "s" };
-          // 输出工作簿
-          const wbout = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
-          hideOpSpinner();
-          const fileName = "勤務表_" + period.replace("-", "") + ".xlsx";
-          const blob = new Blob([wbout], { type: "application/octet-stream" });
-          const url = URL.createObjectURL(blob);
-          const a = document.createElement("a");
-          a.href = url;
-          a.download = fileName;
-          a.click();
-          URL.revokeObjectURL(url);
-          closeWorkSheetModal();
-        })
-        .catch(err => {
-          hideOpSpinner();
-          alert("勤務表作成エラー: " + err.message);
-        });
+    function renderLinks(filteredLinks = null) {
+      const listContainer = document.getElementById('linksList');
+      listContainer.innerHTML = '';
+      const displayLinks = filteredLinks !== null ? filteredLinks : links;
+      displayLinks.forEach((link, index) => {
+        const card = createLinkCard(link, index);
+        listContainer.appendChild(card);
+      });
+      initSortable();
     }
+    
+    // ======= 标签列表功能 =======
+    function renderTagList() {
+      const tagListContainer = document.getElementById("tagList");
+      tagListContainer.innerHTML = "";
+      const tagSet = new Set();
+      // 收集所有链接中的标签
+      links.forEach(link => {
+        if (link.tags && link.tags.length > 0) {
+          link.tags.forEach(tag => {
+            tagSet.add(tag);
+          });
+        }
+      });
+      // 如果没有标签显示空
+      if (tagSet.size === 0) return;
+      
+      // 创建“全部”按钮
+      const allTag = document.createElement("span");
+      allTag.className = "tag-item";
+      allTag.textContent = "All";
+      allTag.onclick = function() {
+        renderLinks();
+        // 设置所有标签按钮取消 active 样式
+        document.querySelectorAll("#tagList .tag-item").forEach(item => item.classList.remove("active"));
+        allTag.classList.add("active");
+      };
+      tagListContainer.appendChild(allTag);
+      
+      // 对每个标签创建一个按钮
+      tagSet.forEach(tag => {
+        const tagItem = document.createElement("span");
+        tagItem.className = "tag-item";
+        tagItem.textContent = tag;
+        tagItem.onclick = function() {
+          // 点击后过滤出包含该标签的链接
+          const filtered = links.filter(link => link.tags && link.tags.includes(tag));
+          renderLinks(filtered);
+          // 更新 active 样式：清除所有 active
+          document.querySelectorAll("#tagList .tag-item").forEach(item => item.classList.remove("active"));
+          tagItem.classList.add("active");
+        };
+        tagListContainer.appendChild(tagItem);
+      });
+    }
+    
+    // ======= 管理者功能 =======
+    async function openAdminModal() {
+      await renderAdminData();
+      document.getElementById('modalOverlay').style.display = 'block';
+      document.getElementById('adminModal').style.display = 'block';
+    }
+    function closeAdminModal() {
+      document.getElementById('modalOverlay').style.display = 'none';
+      document.getElementById('adminModal').style.display = 'none';
+    }
+    function formatLoginTime(isoString) {
+      const date = new Date(isoString);
+      if (isNaN(date.getTime())) return "";
+      const yyyy = date.getFullYear();
+      const mm = String(date.getMonth() + 1).padStart(2, '0');
+      const dd = String(date.getDate()).padStart(2, '0');
+      const hh = String(date.getHours()).padStart(2, '0');
+      const min = String(date.getMinutes()).padStart(2, '0');
+      const ss = String(date.getSeconds()).padStart(2, '0');
+      return `${yyyy}/${mm}/${dd}\n${hh}:${min}:${ss}`;
+    }
+    async function renderAdminData() {
+      const adminTable = document.getElementById('adminTable');
+      const adminTableBody = adminTable.getElementsByTagName('tbody')[0];
+      adminTableBody.innerHTML = "";
+      try {
+        const querySnapshot = await db.collection("users").get();
+        querySnapshot.forEach(doc => {
+          const userData = doc.data();
+          const row = document.createElement("tr");
+          const uidCell = document.createElement("td");
+          uidCell.textContent = doc.id;
+          row.appendChild(uidCell);
+          const emailCell = document.createElement("td");
+          emailCell.textContent = userData.email || "";
+          row.appendChild(emailCell);
+          const loginTimeCell = document.createElement("td");
+          loginTimeCell.textContent = formatLoginTime(userData.lastLogin || "");
+          row.appendChild(loginTimeCell);
+          const adminCell = document.createElement("td");
+          adminCell.textContent = userData.isAdmin ? "是" : "否";
+          row.appendChild(adminCell);
+          const actionsCell = document.createElement("td");
+          
+          const modifyEmailBtn = document.createElement("button");
+          modifyEmailBtn.textContent = "変更";
+          modifyEmailBtn.className = "btn";
+          modifyEmailBtn.onclick = function() { modifyUserEmail(doc.id); };
+          actionsCell.appendChild(modifyEmailBtn);
+          
+          const deleteAccountBtn = document.createElement("button");
+          deleteAccountBtn.textContent = "削除";
+          deleteAccountBtn.className = "btn";
+          deleteAccountBtn.onclick = function() { deleteUserAccount(doc.id); };
+          actionsCell.appendChild(deleteAccountBtn);
+          
+          row.appendChild(actionsCell);
+          adminTableBody.appendChild(row);
+        });
+      } catch (error) {
+        alert("管理者データの取得に失敗しました: " + error.message);
+      }
+    }
+    
+    async function downloadAllUserLinks() {
+      try {
+        const usersSnapshot = await db.collection("users").get();
+        let allData = {};
+        for (const userDoc of usersSnapshot.docs) {
+          const linksSnapshot = await db.collection("users").doc(userDoc.id).collection("links").get();
+          let linksArray = [];
+          linksSnapshot.forEach(linkDoc => {
+            linksArray.push({ id: linkDoc.id, ...linkDoc.data() });
+          });
+          allData[userDoc.id] = { user: userDoc.data(), links: linksArray };
+        }
+        const dataStr = JSON.stringify(allData, null, 2);
+        const blob = new Blob([dataStr], { type: "application/json" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = "all_users_links.json";
+        a.click();
+        URL.revokeObjectURL(url);
+      } catch (error) {
+        alert("全ユーザーリンクダウンロードエラー: " + error.message);
+      }
+    }
+    
+    async function modifyUserEmail(uid) {
+      const newEmail = prompt("新しいメールアドレスを入力してください:");
+      if (!newEmail) return;
+      try {
+        await db.collection("users").doc(uid).update({ email: newEmail });
+        alert("メールアドレスが更新されました。");
+        renderAdminData();
+      } catch (error) {
+        alert("メールアドレス更新エラー: " + error.message);
+      }
+    }
+    
+    async function deleteUserAccount(uid) {
+      if (!confirm("本当にこのアカウントを削除してもよろしいですか？")) return;
+      try {
+        const linksSnapshot = await db.collection("users").doc(uid).collection("links").get();
+        const batch = db.batch();
+        linksSnapshot.forEach(doc => {
+          batch.delete(doc.ref);
+        });
+        await batch.commit();
+        await db.collection("users").doc(uid).delete();
+        alert("アカウントが削除されました。");
+        renderAdminData();
+      } catch (error) {
+        alert("アカウント削除エラー: " + error.message);
+      }
+    }
+    
+    // ======= 主题切换逻辑 =======
+    if (localStorage.getItem('theme') === 'light') {
+      document.body.classList.add('light-theme');
+    }
+    document.getElementById('themeToggle').addEventListener('click', () => {
+      document.body.classList.toggle('light-theme');
+      const isLight = document.body.classList.contains('light-theme');
+      localStorage.setItem('theme', isLight ? 'light' : 'dark');
+    });
     
     // ======= 初始化 Sortable 拖拽排序 =======
     function initSortable() {
