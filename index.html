@@ -11,7 +11,7 @@
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
-  <!-- 使用 xlsx‑style 以尽量保留格式和公式（建议模板为 .xlsx 格式） -->
+  <!-- 使用 xlsx‑style 库，注意模板建议为 .xlsx 格式 -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx-style/0.8.13/xlsx.full.min.js"></script>
 
   <style>
@@ -48,8 +48,7 @@
     body::before {
       content: "";
       position: fixed;
-      top: 0; 
-      left: 0;
+      top: 0; left: 0;
       width: 100%;
       height: 100%;
       background: radial-gradient(ellipse at center, rgba(0,0,0,0.3) 0%, transparent 80%);
@@ -58,7 +57,7 @@
     
     .container {
       max-width: 900px;
-      margin: 40px auto;
+      margin: 60px auto 40px auto;
       padding: 30px;
       background-color: var(--container-bg);
       border-radius: 12px;
@@ -71,10 +70,11 @@
       text-align: center;
       font-weight: 700;
       margin-bottom: 30px;
-      padding-top: 60px; /* 为了防止顶部按钮与标题重叠 */
+      position: relative;
+      z-index: 1;
     }
     
-    /* 顶部右上角按钮 */
+    /* 顶部右上角按钮区域 */
     .top-right-buttons {
       position: absolute;
       top: 10px;
@@ -82,14 +82,14 @@
       display: flex;
       gap: 8px;
       flex-wrap: wrap;
+      z-index: 2;
     }
     .top-right-buttons button {
-      margin: 0;
       flex: none;
     }
-    /* 新增“勤務表作成”按钮设置 */
+    /* “勤務表作成”按钮（绿色） */
     #workSheetBtn {
-      background-color: #4CAF50; /* 绿色 */
+      background-color: #4CAF50;
     }
     
     /* 工具栏 */
@@ -265,7 +265,7 @@
       left: 0;
       width: 100%;
       height: 100%;
-      background: rgba(0,0,0,0.5);
+      background: rgba(0, 0, 0, 0.5);
       z-index: 2050;
       display: none;
     }
@@ -438,11 +438,11 @@
       }
       h1 {
         font-size: 24px;
-        padding-top: 80px; /* 增加上边距以确保标题下移，不与顶部按钮重叠 */
+        padding-top: 90px; /* 确保标题与顶部按钮分离 */
       }
       .top-right-buttons {
         position: static;
-        display: flex;
+        flex-wrap: wrap;
         justify-content: space-between;
         margin-bottom: 10px;
       }
@@ -538,7 +538,7 @@
     <div id="linksList"></div>
   </div>
   
-  <!-- 链接新增模态框 -->
+  <!-- 链接新增 模态框 -->
   <div id="addLinkModal" style="display:none;">
     <h2>新規リンク追加</h2>
     <input type="text" id="modalLinkName" class="form-control" placeholder="リンク名">
@@ -550,7 +550,7 @@
     </div>
   </div>
   
-  <!-- 管理者模态框 -->
+  <!-- 管理者 模态框 -->
   <div id="adminModal" style="display:none;">
     <h2>ユーザー管理</h2>
     <table id="adminTable">
@@ -564,6 +564,7 @@
         </tr>
       </thead>
       <tbody>
+        <!-- 用户信息将动态生成 -->
       </tbody>
     </table>
     <div class="modal-btns">
@@ -579,7 +580,7 @@
   <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
   
   <script>
-    // Firebase の设置（你的 Firebase 控制台中的配置）
+    // Firebase 配置（请确保下面的配置正确，对应你的 Firebase 项目）
     var firebaseConfig = {
       apiKey: "AIzaSyCDlSoBXuNOEQOPIvx1metUAPctqt6xcFs",
       authDomain: "mylinkcollection-abe80.firebaseapp.com",
@@ -588,17 +589,15 @@
       messagingSenderId: "909533533947",
       appId: "1:909533533947:web:b44730dff9fbec4f02425e"
     };
-    // 初始化 Firebase
     firebase.initializeApp(firebaseConfig);
-    // 设置持久化认证
     firebase.auth().setPersistence(firebase.auth.Auth.Persistence.LOCAL);
     const db = firebase.firestore();
     const auth = firebase.auth();
     
-    // 定义全局变量：存储用户链接
+    // 全局变量，存储当前用户链接
     let links = [];
     
-    // 获取 favicon 的函数（加载失败时返回空字符串）
+    // 获取 favicon 的函数：加载失败则返回空字符串（不显示图标）
     function getFaviconUrl(url) {
       try {
         const urlObj = new URL(url);
@@ -615,7 +614,7 @@
       document.getElementById('opSpinner').style.display = 'none';
     }
     
-    // 认证状态监听器
+    // 认证状态监听
     auth.onAuthStateChanged(async (user) => {
       if (user) {
         await updateUserProfile(user);
@@ -646,7 +645,7 @@
       await db.collection("users").doc(user.uid).set(userData, { merge: true });
     }
     
-    // ======= 登录/注册 =======
+    // ======= 登录/注册操作 =======
     function openAuthModal() {
       document.getElementById("authModal").style.display = "block";
       document.getElementById("modalOverlay").style.display = "block";
@@ -798,9 +797,9 @@
       
       const icon = document.createElement('img');
       icon.className = 'link-icon';
-      // 使用明确的相对路径访问 favicon
       icon.src = getFaviconUrl(link.url);
       icon.alt = 'favicon';
+      // 加载失败时隐藏图标
       icon.onerror = function() { this.style.display = 'none'; };
       header.appendChild(icon);
       
@@ -910,4 +909,380 @@
     
     // ======= 模态框操作 =======
     function openAddModal() {
-      document.getElement
+      document.getElementById('modalOverlay').style.display = 'block';
+      document.getElementById('addLinkModal').style.display = 'block';
+      document.getElementById('modalLinkName').value = '';
+      document.getElementById('modalLinkURL').value = '';
+      document.getElementById('modalLinkTags').value = '';
+    }
+    function closeAddModal() {
+      document.getElementById('modalOverlay').style.display = 'none';
+      document.getElementById('addLinkModal').style.display = 'none';
+    }
+    
+    // 当 URL 输入框失去焦点且名称为空时自动获取网站标题
+    document.getElementById('modalLinkURL').addEventListener('blur', function() {
+      const url = this.value.trim();
+      const nameInput = document.getElementById('modalLinkName');
+      if (!url || nameInput.value.trim()) return;
+      fetch("https://api.allorigins.hexocode.repl.co/get?disableCache=true&url=" + encodeURIComponent(url))
+        .then(response => response.json())
+        .then(data => {
+          const html = data.contents;
+          const match = html.match(/<title>([^<]+)<\/title>/i);
+          if (match && match[1]) {
+            nameInput.value = match[1].trim();
+          }
+        })
+        .catch(err => {
+          console.error("タイトル取得失敗:", err);
+        });
+    });
+    
+    function submitNewLink() {
+      const nameInput = document.getElementById('modalLinkName');
+      const url = document.getElementById('modalLinkURL').value.trim();
+      const tagsRaw = document.getElementById('modalLinkTags').value.trim();
+      const tags = tagsRaw ? tagsRaw.split(',').map(tag => tag.trim()).filter(tag => tag) : [];
+      if (!nameInput.value.trim() && url) {
+        fetch("https://api.allorigins.hexocode.repl.co/get?disableCache=true&url=" + encodeURIComponent(url))
+          .then(response => response.json())
+          .then(data => {
+            const html = data.contents;
+            const match = html.match(/<title>([^<]+)<\/title>/i);
+            if (match && match[1]) {
+              nameInput.value = match[1].trim();
+            }
+            saveNewLink(nameInput.value.trim(), url, tags);
+          })
+          .catch(() => {
+            saveNewLink(nameInput.value.trim(), url, tags);
+          });
+      } else {
+        saveNewLink(nameInput.value.trim(), url, tags);
+      }
+    }
+    function saveNewLink(name, url, tags) {
+      if (!name || !url) {
+        alert("すべての情報を入力してください！");
+        return;
+      }
+      const duplicate = links.find(l => l.url.toLowerCase() === url.toLowerCase() || l.name.toLowerCase() === name.toLowerCase());
+      if (duplicate) {
+        if (confirm("重複したリンクが検出されました。既存のリンク情報と統合して更新しますか？")) {
+          const existingTags = duplicate.tags || [];
+          const mergedTags = Array.from(new Set([...existingTags, ...tags]));
+          updateLinkInFirestore(duplicate.id, { name: name, url: url, tags: mergedTags });
+          closeAddModal();
+        } else {
+          return;
+        }
+      } else {
+        addLinkToFirestore({ name: name, url: url, tags: tags });
+      }
+    }
+    
+    document.getElementById('searchInput').addEventListener('input', function() {
+      const query = this.value.trim().toLowerCase();
+      const filtered = links.filter(link => {
+        const nameMatch = link.name.toLowerCase().includes(query);
+        const urlMatch = link.url.toLowerCase().includes(query);
+        const tagMatch = link.tags && link.tags.some(tag => tag.toLowerCase().includes(query));
+        return nameMatch || urlMatch || tagMatch;
+      });
+      renderLinks(filtered);
+    });
+    
+    function exportLinks() {
+      const dataStr = JSON.stringify(links, null, 2);
+      const blob = new Blob([dataStr], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = "links_backup.json";
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+    
+    document.getElementById('importInput').addEventListener('change', function(event) {
+      const file = event.target.files[0];
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        try {
+          const importedLinks = JSON.parse(e.target.result);
+          if (Array.isArray(importedLinks)) {
+            const user = auth.currentUser;
+            if (!user) return;
+            db.collection("users").doc(user.uid).collection("links").get()
+              .then(querySnapshot => {
+                const batch = db.batch();
+                querySnapshot.forEach(doc => {
+                  batch.delete(doc.ref);
+                });
+                return batch.commit();
+              })
+              .then(() => {
+                const promises = importedLinks.map(linkData => {
+                  return db.collection("users").doc(user.uid).collection("links").add(linkData);
+                });
+                return Promise.all(promises);
+              })
+              .then(() => {
+                loadUserLinks();
+                alert("データのインポートに成功しました！");
+              })
+              .catch(error => {
+                alert("データインポートエラー: " + error.message);
+              });
+          } else {
+            alert("データ形式が正しくありません！");
+          }
+        } catch (err) {
+          alert("インポートに失敗しました。ファイル形式が正しくありません！");
+        }
+      };
+      reader.readAsText(file);
+    });
+    
+    // ======= 管理者功能 =======
+    async function openAdminModal() {
+      await renderAdminData();
+      document.getElementById('modalOverlay').style.display = 'block';
+      document.getElementById('adminModal').style.display = 'block';
+    }
+    function closeAdminModal() {
+      document.getElementById('modalOverlay').style.display = 'none';
+      document.getElementById('adminModal').style.display = 'none';
+    }
+    function formatLoginTime(isoString) {
+      const date = new Date(isoString);
+      if (isNaN(date.getTime())) return "";
+      const yyyy = date.getFullYear();
+      const mm = String(date.getMonth() + 1).padStart(2, '0');
+      const dd = String(date.getDate()).padStart(2, '0');
+      const hh = String(date.getHours()).padStart(2, '0');
+      const min = String(date.getMinutes()).padStart(2, '0');
+      const ss = String(date.getSeconds()).padStart(2, '0');
+      return `${yyyy}/${mm}/${dd}\n${hh}:${min}:${ss}`;
+    }
+    async function renderAdminData() {
+      const adminTable = document.getElementById('adminTable');
+      const adminTableBody = adminTable.getElementsByTagName('tbody')[0];
+      adminTableBody.innerHTML = "";
+      try {
+        const querySnapshot = await db.collection("users").get();
+        querySnapshot.forEach(doc => {
+          const userData = doc.data();
+          const row = document.createElement("tr");
+          const uidCell = document.createElement("td");
+          uidCell.textContent = doc.id;
+          row.appendChild(uidCell);
+          const emailCell = document.createElement("td");
+          emailCell.textContent = userData.email || "";
+          row.appendChild(emailCell);
+          const loginTimeCell = document.createElement("td");
+          loginTimeCell.textContent = formatLoginTime(userData.lastLogin || "");
+          row.appendChild(loginTimeCell);
+          const adminCell = document.createElement("td");
+          adminCell.textContent = userData.isAdmin ? "是" : "否";
+          row.appendChild(adminCell);
+          const actionsCell = document.createElement("td");
+          
+          const modifyEmailBtn = document.createElement("button");
+          modifyEmailBtn.textContent = "変更";
+          modifyEmailBtn.className = "btn";
+          modifyEmailBtn.onclick = function() { modifyUserEmail(doc.id); };
+          actionsCell.appendChild(modifyEmailBtn);
+          
+          const deleteAccountBtn = document.createElement("button");
+          deleteAccountBtn.textContent = "削除";
+          deleteAccountBtn.className = "btn";
+          deleteAccountBtn.onclick = function() { deleteUserAccount(doc.id); };
+          actionsCell.appendChild(deleteAccountBtn);
+          
+          row.appendChild(actionsCell);
+          adminTableBody.appendChild(row);
+        });
+      } catch (error) {
+        alert("管理者データの取得に失敗しました: " + error.message);
+      }
+    }
+    
+    async function downloadAllUserLinks() {
+      try {
+        const usersSnapshot = await db.collection("users").get();
+        let allData = {};
+        for (const userDoc of usersSnapshot.docs) {
+          const linksSnapshot = await db.collection("users").doc(userDoc.id).collection("links").get();
+          let linksArray = [];
+          linksSnapshot.forEach(linkDoc => {
+            linksArray.push({ id: linkDoc.id, ...linkDoc.data() });
+          });
+          allData[userDoc.id] = { user: userDoc.data(), links: linksArray };
+        }
+        const dataStr = JSON.stringify(allData, null, 2);
+        const blob = new Blob([dataStr], { type: "application/json" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = "all_users_links.json";
+        a.click();
+        URL.revokeObjectURL(url);
+      } catch (error) {
+        alert("全ユーザーリンクダウンロードエラー: " + error.message);
+      }
+    }
+    
+    async function modifyUserEmail(uid) {
+      const newEmail = prompt("新しいメールアドレスを入力してください:");
+      if (!newEmail) return;
+      try {
+        await db.collection("users").doc(uid).update({ email: newEmail });
+        alert("メールアドレスが更新されました。");
+        renderAdminData();
+      } catch (error) {
+        alert("メールアドレス更新エラー: " + error.message);
+      }
+    }
+    
+    async function deleteUserAccount(uid) {
+      if (!confirm("本当にこのアカウントを削除してもよろしいですか？")) return;
+      try {
+        const linksSnapshot = await db.collection("users").doc(uid).collection("links").get();
+        const batch = db.batch();
+        linksSnapshot.forEach(doc => {
+          batch.delete(doc.ref);
+        });
+        await batch.commit();
+        await db.collection("users").doc(uid).delete();
+        alert("アカウントが削除されました。");
+        renderAdminData();
+      } catch (error) {
+        alert("アカウント削除エラー: " + error.message);
+      }
+    }
+    
+    // ======= 主题切换逻辑 =======
+    if (localStorage.getItem('theme') === 'light') {
+      document.body.classList.add('light-theme');
+    }
+    document.getElementById('themeToggle').addEventListener('click', () => {
+      document.body.classList.toggle('light-theme');
+      const isLight = document.body.classList.contains('light-theme');
+      localStorage.setItem('theme', isLight ? 'light' : 'dark');
+    });
+    
+    // ======= 勤務表作成相关功能 =======
+    function openWorkSheetModal() {
+      document.getElementById('modalOverlay').style.display = 'block';
+      const modal = document.getElementById('workSheetModal');
+      modal.style.display = 'block';
+      const today = new Date();
+      const yyyy = today.getFullYear();
+      const mm = String(today.getMonth() + 1).padStart(2, '0');
+      document.getElementById('wsPeriod').value = `${yyyy}-${mm}`;
+      document.getElementById('wsLastName').value = "";
+      document.getElementById('wsFirstName').value = "";
+    }
+    function closeWorkSheetModal() {
+      document.getElementById('modalOverlay').style.display = 'none';
+      document.getElementById('workSheetModal').style.display = 'none';
+    }
+    
+    function downloadWorkSheet() {
+      const lastName = document.getElementById('wsLastName').value.trim();
+      const firstName = document.getElementById('wsFirstName').value.trim();
+      const period = document.getElementById('wsPeriod').value;  // 格式 "YYYY-MM"
+      if (!lastName || !firstName || !period) {
+        alert("すべての情報を入力してください！");
+        return;
+      }
+      // 生成工作表名称，如 "08月"
+      const monthStr = period.split("-")[1] + "月";
+      
+      showOpSpinner();
+      // 使用明确相对路径获取模板文件（template.xlsx 与当前 HTML 文件位于同一目录）
+      fetch("./template.xlsx")
+        .then(response => {
+          if (!response.ok) {
+            throw new Error("Template file not found.");
+          }
+          return response.arrayBuffer();
+        })
+        .then(data => {
+          const workbook = XLSX.read(data, { type: 'array' });
+          // 假设模板只有一个工作表
+          const origSheetName = workbook.SheetNames[0];
+          const worksheet = workbook.Sheets[origSheetName];
+          // 修改工作表名称为当前月份，并将工作表保存到 workbook.Sheets 中
+          workbook.SheetNames[0] = monthStr;
+          workbook.Sheets[monthStr] = worksheet;
+          // 修改指定单元格：D2 改为当前月份、N54 改为姓、O54 改为名
+          worksheet["D2"] = { v: monthStr, t: "s" };
+          worksheet["N54"] = { v: lastName, t: "s" };
+          worksheet["O54"] = { v: firstName, t: "s" };
+          // 输出工作簿
+          const wbout = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
+          hideOpSpinner();
+          const fileName = "勤務表_" + period.replace("-", "") + ".xlsx";
+          const blob = new Blob([wbout], { type: "application/octet-stream" });
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement("a");
+          a.href = url;
+          a.download = fileName;
+          a.click();
+          URL.revokeObjectURL(url);
+          closeWorkSheetModal();
+        })
+        .catch(err => {
+          hideOpSpinner();
+          alert("勤務表作成エラー: " + err.message);
+        });
+    }
+    
+    // ======= 初始化 Sortable 拖拽排序 =======
+    function initSortable() {
+      const listContainer = document.getElementById('linksList');
+      if (!document.getElementById('searchInput').value.trim()) {
+        new Sortable(listContainer, {
+          animation: 150,
+          fallbackOnBody: true,
+          touchStartThreshold: 5,
+          swapThreshold: 0.65,
+          onEnd: function(evt) {
+            const cards = listContainer.children;
+            const user = auth.currentUser;
+            if (!user) return;
+            showOpSpinner();
+            const batch = db.batch();
+            for (let i = 0; i < cards.length; i++) {
+              const docId = cards[i].getAttribute('data-id');
+              const docRef = db.collection("users").doc(user.uid).collection("links").doc(docId);
+              batch.update(docRef, { order: i });
+            }
+            batch.commit().then(() => {
+              hideOpSpinner();
+              loadUserLinks();
+            }).catch(error => {
+              hideOpSpinner();
+              alert("順序更新エラー: " + error.message);
+            });
+          }
+        });
+      }
+    }
+    
+    function renderLinks(filteredLinks = null) {
+      const listContainer = document.getElementById('linksList');
+      listContainer.innerHTML = '';
+      const displayLinks = filteredLinks !== null ? filteredLinks : links;
+      displayLinks.forEach((link, index) => {
+        const card = createLinkCard(link, index);
+        listContainer.appendChild(card);
+      });
+      initSortable();
+    }
+    
+  </script>
+</body>
+</html>
