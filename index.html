@@ -11,7 +11,7 @@
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
-  <!-- 使用 xlsx‑style 以尽量保留格式和公式（建议模板为 .xlsx 格式） -->
+  <!-- 使用 xlsx‑style 尽量保留格式和公式（建议模板为 .xlsx 格式） -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx-style/0.8.13/xlsx.full.min.js"></script>
   
   <style>
@@ -557,8 +557,7 @@
     // 定义全局变量
     let links = [];
     
-    // 获取 favicon 的函数
-    // 当加载失败时返回空字符串，不显示图片
+    // 获取 favicon 的函数：当加载失败时返回空字符串，不显示图片
     function getFaviconUrl(url) {
       try {
         const urlObj = new URL(url);
@@ -906,6 +905,7 @@
       const tagsRaw = document.getElementById('modalLinkTags').value.trim();
       const tags = tagsRaw ? tagsRaw.split(',').map(tag => tag.trim()).filter(tag => tag) : [];
       if (!nameInput.value.trim() && url) {
+        // 尝试获取网站标题再保存
         fetch("https://api.allorigins.hexocode.repl.co/get?disableCache=true&url=" + encodeURIComponent(url))
           .then(response => response.json())
           .then(data => {
@@ -1161,7 +1161,7 @@
       const monthStr = period.split("-")[1] + "月";
       
       showOpSpinner();
-      // 注意：模板文件请保证为 .xlsx 格式，文件名改为 "template.xlsx"
+      // 模板文件改为 "template.xlsx"，请确保该文件与 HTML 同目录，并通过 HTTP 服务器访问
       fetch("template.xlsx")
         .then(response => {
           if (!response.ok) {
@@ -1181,7 +1181,7 @@
           worksheet["D2"] = { v: monthStr, t: "s" };
           worksheet["N54"] = { v: lastName, t: "s" };
           worksheet["O54"] = { v: firstName, t: "s" };
-          // 输出工作簿（尽量保留格式和公式，xlsx‑style 的支持有限）
+          // 输出工作簿
           const wbout = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
           hideOpSpinner();
           const fileName = "勤務表_" + period.replace("-", "") + ".xlsx";
