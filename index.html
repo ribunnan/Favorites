@@ -10,65 +10,97 @@
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx-style/0.8.13/xlsx.full.min.js"></script>
   <style>
-    :root { --bg-color: #202124; --text-color: #E8EAED; --container-bg: #303134; --border-color: #5f6368; --link-color: #8ab4f8; --btn-bg: #8ab4f8; --btn-bg-hover: #669df6; --shadow-color: rgba(0,0,0,0.7); }
-    .light-theme { --bg-color: #F1F3F4; --text-color: #202124; --container-bg: #FFFFFF; --border-color: #dadce0; --link-color: #1a73e8; --btn-bg: #1a73e8; --btn-bg-hover: #1558b0; --shadow-color: rgba(0,0,0,0.1); }
-    body { font-family: 'Roboto', sans-serif; background-color: var(--bg-color); color: var(--text-color); margin: 0; padding: 20px; transition: background-color 0.4s, color 0.4s; }
-    body::before { content:""; position: fixed; top:0; left:0; width:100%; height:100%; background: radial-gradient(ellipse at center, rgba(0,0,0,0.3) 0%, transparent 80%); z-index: -1; }
-    .container { max-width: 900px; margin: 60px auto 40px auto; padding: 30px; background-color: var(--container-bg); border-radius: 12px; box-shadow: 0 6px 20px var(--shadow-color); display: none; position: relative; }
-    h1 { text-align: center; font-weight: 700; margin-bottom: 30px; position: relative; z-index: 1; }
-    .top-right-buttons { position: absolute; top: 10px; right: 10px; display: flex; gap: 8px; z-index: 2; }
-    .top-right-buttons button { flex: none; }
-    #workSheetBtn { background-color: #4CAF50; }
+    :root {
+      --bg-color: #202124; --text-color: #E8EAED; --container-bg: #303134; --border-color: #5f6368;
+      --link-color: #8ab4f8; --btn-bg: #8ab4f8; --btn-bg-hover: #669df6; --shadow-color: rgba(0,0,0,0.7);
+    }
+    .light-theme {
+      --bg-color: #F1F3F4; --text-color: #202124; --container-bg: #FFFFFF; --border-color: #dadce0;
+      --link-color: #1a73e8; --btn-bg: #1a73e8; --btn-bg-hover: #1558b0; --shadow-color: rgba(0,0,0,0.1);
+    }
+    body { font-family: 'Roboto', sans-serif; background-color: var(--bg-color); color: var(--text-color);
+      margin: 0; padding: 20px; transition: background-color 0.4s, color 0.4s;
+    }
+    body::before { content:""; position: fixed; top:0; left:0; width:100%; height:100%;
+      background: radial-gradient(ellipse at center, rgba(0,0,0,0.3) 0%, transparent 80%); z-index: -1;
+    }
+    .container { max-width: 900px; margin: 60px auto 40px; padding: 30px; background-color: var(--container-bg);
+      border-radius: 12px; box-shadow: 0 6px 20px var(--shadow-color); display: none; position: relative;
+    }
+    /* 顶部按钮 */
+    .top-right-buttons { position: absolute; top: 10px; right: 10px; display: flex; gap: 4px; z-index: 2; }
+    .top-right-buttons button { flex: none; padding: 6px 10px; font-size: 14px; }
+    /* 工具栏 */
     .toolbar { display: flex; align-items: center; flex-wrap: wrap; gap: 15px; margin-bottom: 15px; }
-    .toolbar input.form-control { flex: 1 1 240px; max-width: 400px; height: 44px; padding: 0 12px; border: 1px solid var(--border-color); border-radius: 6px; background-color: var(--container-bg); color: var(--text-color); box-sizing: border-box; transition: border-color 0.3s; }
+    .toolbar input.form-control { flex: 1 1 240px; max-width: 400px; height: 44px; padding: 0 12px;
+      border: 1px solid var(--border-color); border-radius: 6px; background-color: var(--container-bg);
+      color: var(--text-color); box-sizing: border-box; transition: border-color 0.3s;
+    }
     .toolbar input.form-control:focus { border-color: var(--btn-bg); outline: none; }
-    .toolbar button { height: 44px; padding: 0 15px; border: none; border-radius: 6px; background-color: var(--btn-bg); color: #fff; cursor: pointer; font-size: 14px; transition: background-color 0.3s, transform 0.2s; }
+    .toolbar button { height: 44px; padding: 0 15px; border: none; border-radius: 6px;
+      background-color: var(--btn-bg); color: #fff; cursor: pointer; font-size: 14px;
+      transition: background-color 0.3s, transform 0.2s;
+    }
     .toolbar button:hover { background-color: var(--btn-bg-hover); transform: translateY(-3px); }
     hr { border: none; height: 1px; background-color: var(--border-color); margin: 30px 0; }
-    #tagList { margin: 0 0 20px; display: flex; flex-wrap: wrap; gap: 8px; }
-    #tagList .tag-item { background-color: var(--border-color); color: var(--text-color); padding: 4px 8px; border-radius: 4px; font-size: 14px; cursor: pointer; transition: background-color 0.3s; }
+    /* 标签列表 */
+    #tagList { margin-bottom: 20px; display: flex; flex-wrap: wrap; gap: 8px; }
+    #tagList .tag-item { background-color: var(--border-color); color: var(--text-color); padding: 4px 8px;
+      border-radius: 4px; font-size: 14px; cursor: pointer; transition: background-color 0.3s;
+    }
     #tagList .tag-item:hover { background-color: var(--btn-bg-hover); }
     #tagList .tag-item.active { background-color: var(--btn-bg); color: #fff; }
-    .link-card { background-color: var(--container-bg); border: 1px solid var(--border-color); border-radius: 8px; padding: 20px; margin-bottom: 20px; box-shadow: 0 3px 10px var(--shadow-color); transition: transform 0.2s; }
+    /* 链接卡片 */
+    .link-card { background-color: var(--container-bg); border: 1px solid var(--border-color); border-radius: 8px;
+      padding: 20px; margin-bottom: 20px; box-shadow: 0 3px 10px var(--shadow-color); transition: transform 0.2s;
+    }
     .link-card:hover { transform: translateY(-3px); }
     .link-header { display: flex; align-items: center; margin-bottom: 10px; }
     .link-icon { width: 32px; height: 32px; margin-right: 15px; border-radius: 4px; object-fit: cover; }
     .link-info { display: flex; flex-wrap: wrap; align-items: center; flex: 1; }
-    .link-info a { color: var(--link-color); text-decoration: none; font-size: 20px; font-weight: 500; margin-right: 10px; }
+    .link-info a { color: var(--link-color); text-decoration: none; font-size: 20px; font-weight: 500;
+      margin-right: 10px;
+    }
     .link-info a:hover { text-decoration: underline; }
-    .tag { background-color: var(--border-color); color: var(--text-color); padding: 3px 8px; border-radius: 4px; font-size: 12px; margin-right: 6px; margin-bottom: 4px; }
-    .btn, .btn-add { padding: 10px 16px; border: none; border-radius: 4px; background-color: var(--btn-bg); color: #fff; cursor: pointer; transition: background-color 0.3s, transform 0.2s; font-size: 14px; margin: 5px 0; }
-    .btn:hover, .btn-add:hover { background-color: var(--btn-bg-hover); transform: translateY(-2px); }
-    .link-btn { margin-right: 8px; }
-    .edit-container { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 15px; }
+    .tag { background-color: var(--border-color); color: var(--text-color); padding: 3px 8px; border-radius: 4px;
+      font-size: 12px; margin-right: 6px; margin-bottom: 4px;
+    }
+    /* 排序按钮 */
+    .order-btn { font-size: 16px; background: none; border: none; color: var(--btn-bg); cursor: pointer;
+      padding: 2px 6px; }
+    .order-btn:hover { color: var(--btn-bg-hover); }
+    /* 编辑按钮组 */
     .edit-buttons { display: flex; gap: 10px; margin-top: 10px; }
-    .edit-input { flex: 1; padding: 10px; border: 1px solid var(--border-color); border-radius: 6px; background-color: var(--container-bg); color: var(--text-color); transition: border-color 0.3s; }
+    .edit-input { flex: 1; padding: 10px; border: 1px solid var(--border-color); border-radius: 6px;
+      background-color: var(--container-bg); color: var(--text-color); transition: border-color 0.3s;
+    }
     .edit-input:focus { border-color: var(--btn-bg); outline: none; }
-    #authModal { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background-color: var(--container-bg); border: 1px solid var(--border-color); border-radius: 8px; width: 90%; max-width: 400px; padding: 20px; z-index: 2100; box-shadow: 0 6px 20px var(--shadow-color); display: none; }
-    #authModal h2 { text-align: center; margin-top: 0; margin-bottom: 20px; }
+    /* 模态框 */
+    #authModal, #addLinkModal, #adminModal { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+      background-color: var(--container-bg); border: 1px solid var(--border-color); border-radius: 8px;
+      width: 90%; max-width: 400px; padding: 20px; z-index: 2100; box-shadow: 0 6px 20px var(--shadow-color); display: none;
+    }
+    #authModal h2, #addLinkModal h2, #adminModal h2 { text-align: center; margin-top: 0; margin-bottom: 20px; }
     .modal-btns-row { display: flex; justify-content: flex-end; gap: 8px; margin-top: 10px; }
     #modalOverlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 2050; display: none; }
-    #addLinkModal { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background-color: var(--container-bg); border: 1px solid var(--border-color); border-radius: 8px; width: 90%; max-width: 400px; padding: 20px; z-index: 2100; box-shadow: 0 6px 20px var(--shadow-color); display: none; }
-    #addLinkModal h2 { text-align: center; margin-top: 0; margin-bottom: 20px; }
-    #addLinkModal .modal-btns { text-align: right; margin-top: 20px; }
-    #addLinkModal .modal-btns button { margin-left: 10px; padding: 10px 16px; border: none; border-radius: 4px; cursor: pointer; transition: background-color 0.3s, transform 0.2s; font-size: 14px; }
-    #addLinkModal .modal-btns .btn { background-color: var(--btn-bg); color: #fff; }
-    #addLinkModal .modal-btns .btn:hover { background-color: var(--btn-bg-hover); transform: translateY(-2px); }
-    #adminModal { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background-color: var(--container-bg); border: 1px solid var(--border-color); border-radius: 8px; width: 90%; max-width: 500px; padding: 15px; z-index: 2200; box-shadow: 0 6px 20px var(--shadow-color); display: none; max-height: 80vh; overflow-y: auto; }
-    #adminModal h2 { text-align: center; margin-top: 0; margin-bottom: 20px; }
+    /* 管理者表格（隐藏 UID 列） */
     #adminModal table { width: 100%; border-collapse: collapse; }
     #adminModal th, #adminModal td { padding: 6px 8px; border: 1px solid var(--border-color); text-align: left; font-size: 14px; line-height: 1.4; white-space: pre-wrap; }
-    #adminModal th { background-color: var(--btn-bg); color: #fff; }
+    #adminModal th:nth-child(1) { display: none; }
+    #adminModal td:nth-child(1) { display: none; }
+    #adminModal th:nth-child(2) { background-color: var(--btn-bg); color: #fff; }
     #adminModal .modal-btns { text-align: right; margin-top: 20px; }
-    #adminModal .modal-btns button { margin-left: 10px; padding: 10px 16px; border: none; border-radius: 4px; cursor: pointer; transition: background-color 0.3s, transform 0.2s; font-size: 14px; }
+    #adminModal .modal-btns button { margin-left: 10px; padding: 10px 16px; border: none; border-radius: 4px;
+       cursor: pointer; transition: background-color 0.3s, transform 0.2s; font-size: 14px; }
     #adminModal .modal-btns .btn { background-color: var(--btn-bg); color: #fff; }
     #adminModal .modal-btns .btn:hover { background-color: var(--btn-bg-hover); transform: translateY(-2px); }
-    .spinner { border: 4px solid rgba(0, 0, 0, 0.1); width: 24px; height: 24px; border-radius: 50%; border-left-color: var(--btn-bg); animation: spin 1s linear infinite; display: inline-block; }
+    .spinner { border: 4px solid rgba(0,0,0,0.1); width: 24px; height: 24px; border-radius: 50%;
+      border-left-color: var(--btn-bg); animation: spin 1s linear infinite; display: inline-block; }
     @keyframes spin { to { transform: rotate(360deg); } }
     @media (max-width: 600px) {
       .container { margin: 10px; padding: 15px; }
       h1 { display: none; }
-      .top-right-buttons { position: static; justify-content: flex-end; gap: 8px; margin-bottom: 10px; }
+      .top-right-buttons { position: static; justify-content: flex-end; gap: 4px; margin-bottom: 10px; }
       .toolbar input.form-control { height: 36px; padding: 8px; font-size: 14px; }
       .toolbar button { height: 36px; padding: 8px 12px; font-size: 12px; }
       .link-card { padding: 15px; }
@@ -78,7 +110,7 @@
   </style>
 </head>
 <body>
-  <div id="authModal" style="display:none;">
+  <div id="authModal">
     <div id="loginForm">
       <h2>ログイン</h2>
       <input type="text" id="loginUsername" class="form-control" placeholder="メールアドレス">
@@ -87,9 +119,7 @@
         <button class="btn-add" id="loginButton" onclick="login()">ログイン</button>
         <button class="btn-add" onclick="switchToRegister()">アカウント作成</button>
       </div>
-      <div style="text-align:center;">
-        <div id="loginSpinner" class="spinner" style="display:none;"></div>
-      </div>
+      <div style="text-align:center;"><div id="loginSpinner" class="spinner" style="display:none;"></div></div>
     </div>
     <div id="registerForm" style="display:none;">
       <h2>登録</h2>
@@ -102,13 +132,13 @@
       </div>
     </div>
   </div>
-  <div id="modalOverlay" style="display:none;"></div>
+  <div id="modalOverlay"></div>
   <div class="container" id="mainContent">
     <div class="top-right-buttons">
       <button id="adminBtn" onclick="openAdminModal()" style="display:none;">管理</button>
       <button onclick="confirmLogout()">ログアウト</button>
     </div>
-    <h1>リンク集</h1>
+    <!-- 这里取消了顶部标题 -->
     <div class="toolbar">
       <input type="text" id="searchInput" class="form-control" placeholder="リンク検索">
       <button onclick="openAddModal()">追加</button>
@@ -120,22 +150,21 @@
     <div id="tagList"></div>
     <div id="linksList"></div>
   </div>
-  <div id="addLinkModal" style="display:none;">
+  <div id="addLinkModal">
     <h2>新規リンク追加</h2>
     <input type="text" id="modalLinkName" class="form-control" placeholder="リンク名">
     <input type="url" id="modalLinkURL" class="form-control" placeholder="URL (http:// または https://)">
-    <input type="text" id="modalLinkTags" class="form-control" placeholder="タグ (複数の場合、カンマ区切り)">
+    <input type="text" id="modalLinkTags" class="form-control" placeholder="タグ (カンマ区切り)">
     <div class="modal-btns">
       <button class="btn" onclick="closeAddModal()">キャンセル</button>
       <button class="btn-add" onclick="submitNewLink()">送信</button>
     </div>
   </div>
-  <div id="adminModal" style="display:none;">
+  <div id="adminModal">
     <h2>ユーザー管理</h2>
     <table id="adminTable">
       <thead>
         <tr>
-          <th>UID</th>
           <th>メール</th>
           <th>最終ログイン</th>
           <th>管理者</th>
@@ -152,7 +181,14 @@
   <div id="opSpinner" class="spinner" style="display:none; position:fixed; top:50%; left:50%; transform:translate(-50%, -50%); z-index:2300;"></div>
   <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
   <script>
-    var firebaseConfig = { apiKey:"AIzaSyCDlSoBXuNOEQOPIvx1metUAPctqt6xcFs", authDomain:"mylinkcollection-abe80.firebaseapp.com", projectId:"mylinkcollection-abe80", storageBucket:"mylinkcollection-abe80.firebasestorage.app", messagingSenderId:"909533533947", appId:"1:909533533947:web:b44730dff9fbec4f02425e" };
+    var firebaseConfig = {
+      apiKey:"AIzaSyCDlSoBXuNOEQOPIvx1metUAPctqt6xcFs",
+      authDomain:"mylinkcollection-abe80.firebaseapp.com",
+      projectId:"mylinkcollection-abe80",
+      storageBucket:"mylinkcollection-abe80.firebasestorage.app",
+      messagingSenderId:"909533533947",
+      appId:"1:909533533947:web:b44730dff9fbec4f02425e"
+    };
     firebase.initializeApp(firebaseConfig);
     firebase.auth().setPersistence(firebase.auth.Auth.Persistence.LOCAL);
     const db = firebase.firestore(), auth = firebase.auth();
@@ -161,7 +197,8 @@
     function showOpSpinner(){ document.getElementById('opSpinner').style.display = 'block'; }
     function hideOpSpinner(){ document.getElementById('opSpinner').style.display = 'none'; }
     auth.onAuthStateChanged(async user=>{
-      if(user){ await updateUserProfile(user); loadUserLinks();
+      if(user){
+        await updateUserProfile(user); loadUserLinks();
         document.getElementById("authModal").style.display="none";
         document.getElementById("modalOverlay").style.display="none";
         document.getElementById("mainContent").style.display="block";
@@ -169,7 +206,7 @@
         document.getElementById("adminBtn").style.display = (ud && ud.isAdmin) ? "inline-block" : "none";
       } else { document.getElementById("mainContent").style.display="none"; openAuthModal(); }
     });
-    async function updateUserProfile(user){ 
+    async function updateUserProfile(user){
       let data = { email:user.email, lastLogin:new Date().toISOString(), isAdmin:(user.email==="ribunnan@ribunnan.com") };
       await db.collection("users").doc(user.uid).set(data,{merge:true});
     }
@@ -177,17 +214,19 @@
     function switchToRegister(){ document.getElementById("loginForm").style.display="none"; document.getElementById("registerForm").style.display="block"; }
     function switchToLogin(){ document.getElementById("registerForm").style.display="none"; document.getElementById("loginForm").style.display="block"; }
     function login(){
-      let email=document.getElementById("loginUsername").value.trim(), password=document.getElementById("loginPassword").value;
-      if(!email||!password){ alert("すべて入力してください！"); return; }
+      let email = document.getElementById("loginUsername").value.trim(), password = document.getElementById("loginPassword").value;
+      if(!email||!password){ alert("必須項目を入力してください！"); return; }
       let btn = document.getElementById("loginButton"), sp = document.getElementById("loginSpinner");
       btn.disabled = true; sp.style.display = "inline-block";
       auth.signInWithEmailAndPassword(email,password).then(()=>{
         sp.style.display = "none"; btn.disabled = false;
-      }).catch(error=>{ sp.style.display = "none"; btn.disabled = false; alert("ログインエラー: "+error.message); });
+      }).catch(error=>{
+        sp.style.display = "none"; btn.disabled = false; alert("ログインエラー: "+error.message);
+      });
     }
     function register(){
-      let email=document.getElementById("registerUsername").value.trim(), password=document.getElementById("registerPassword").value, confirm = document.getElementById("registerPasswordConfirm").value;
-      if(!email||!password||!confirm){ alert("すべて入力してください！"); return; }
+      let email = document.getElementById("registerUsername").value.trim(), password = document.getElementById("registerPassword").value, confirm = document.getElementById("registerPasswordConfirm").value;
+      if(!email||!password||!confirm){ alert("必須項目を入力してください！"); return; }
       if(password!==confirm){ alert("パスワードが一致しません！"); return; }
       auth.createUserWithEmailAndPassword(email,password).catch(error=>{ alert("登録エラー: "+error.message); });
     }
@@ -223,45 +262,90 @@
       }).catch(error=>{ hideOpSpinner(); alert("削除失敗: "+error.message); });
     }
     function createLinkCard(link, idx){
-      let card = document.createElement('div'); card.className = 'link-card'; card.setAttribute('data-id',link.id);
+      let card = document.createElement('div'); card.className = 'link-card'; card.setAttribute('data-id', link.id);
       let header = document.createElement('div'); header.className = 'link-header';
-      let icon = document.createElement('img'); icon.className = 'link-icon'; icon.src = getFaviconUrl(link.url); icon.alt=""; icon.onerror = function(){ this.style.display="none"; };
+      let icon = document.createElement('img'); icon.className = 'link-icon'; icon.src = getFaviconUrl(link.url); icon.alt="";
+      icon.onerror = function(){ this.style.display="none"; };
       header.appendChild(icon);
       let info = document.createElement('div'); info.className = 'link-info';
-      let a = document.createElement('a'); a.href = link.url; a.textContent = link.name; a.target = '_blank'; info.appendChild(a);
-      if(link.tags && link.tags.length) { link.tags.forEach(t=>{ let sp = document.createElement('span'); sp.className="tag"; sp.textContent=t; info.appendChild(sp); }); }
+      let a = document.createElement('a'); a.href = link.url; a.textContent = link.name; a.target = '_blank';
+      info.appendChild(a);
+      if(link.tags && link.tags.length){ link.tags.forEach(t=>{ let sp = document.createElement('span'); sp.className = 'tag'; sp.textContent = t; info.appendChild(sp); }); }
       header.appendChild(info); card.appendChild(header);
-      let btnCon = document.createElement('div');
+      let orderDiv = document.createElement('div'); orderDiv.style.display="flex"; orderDiv.style.flexDirection="column"; orderDiv.style.gap="2px";
+      let upBtn = document.createElement('button'); upBtn.className="order-btn"; upBtn.textContent="▲";
+      upBtn.onclick = ()=>{ moveLink(idx, -1); };
+      let downBtn = document.createElement('button'); downBtn.className="order-btn"; downBtn.textContent="▼";
+      downBtn.onclick = ()=>{ moveLink(idx, 1); };
+      orderDiv.appendChild(upBtn); orderDiv.appendChild(downBtn);
+      let actionDiv = document.createElement('div'); actionDiv.style.display="flex"; actionDiv.style.justifyContent="space-between"; actionDiv.style.alignItems="center"; actionDiv.style.marginTop="10px";
+      let btnDiv = document.createElement('div'); btnDiv.style.display="flex"; btnDiv.style.gap="10px";
       let editBtn = document.createElement('button'); editBtn.className="btn link-btn"; editBtn.textContent="編集"; editBtn.onclick = ()=>{ enterEditMode(card, link, idx); };
       let delBtn = document.createElement('button'); delBtn.className="btn"; delBtn.textContent="削除"; delBtn.onclick = ()=>{ if(confirm("削除しますか？")) deleteLinkFromFirestore(link.id); };
-      btnCon.appendChild(editBtn); btnCon.appendChild(delBtn);
-      card.appendChild(btnCon);
+      btnDiv.appendChild(editBtn); btnDiv.appendChild(delBtn);
+      actionDiv.appendChild(btnDiv); actionDiv.appendChild(orderDiv);
+      card.appendChild(actionDiv);
       return card;
+    }
+    function moveLink(idx, offset){
+      let newIdx = idx + offset;
+      if(newIdx < 0 || newIdx >= links.length) return;
+      let temp = links[idx].order;
+      links[idx].order = links[newIdx].order;
+      links[newIdx].order = temp;
+      let user = auth.currentUser; if(!user)return;
+      let batch = db.batch();
+      let ref1 = db.collection("users").doc(user.uid).collection("links").doc(links[idx].id);
+      let ref2 = db.collection("users").doc(user.uid).collection("links").doc(links[newIdx].id);
+      batch.update(ref1, { order: links[idx].order });
+      batch.update(ref2, { order: links[newIdx].order });
+      batch.commit().then(()=>{ loadUserLinks(); }).catch(e=>{ alert("並び替え失敗: "+e.message); });
     }
     function enterEditMode(card, link, idx){
       card.innerHTML = "";
       let container = document.createElement('div'); container.className = 'edit-container';
-      let nameIn = document.createElement('input'); nameIn.className="edit-input"; nameIn.value = link.name; nameIn.placeholder="リンク名";
-      let urlIn = document.createElement('input'); urlIn.className="edit-input"; urlIn.value = link.url; urlIn.placeholder="URL (http:// または https://)";
-      let tagsIn = document.createElement('input'); tagsIn.className="edit-input"; tagsIn.value = link.tags ? link.tags.join(', ') : ""; tagsIn.placeholder="タグ (カンマ区切り)";
+      let nameIn = document.createElement('input'); nameIn.className = 'edit-input'; nameIn.value = link.name; nameIn.placeholder = "リンク名";
+      let urlIn = document.createElement('input'); urlIn.className = 'edit-input'; urlIn.value = link.url; urlIn.placeholder = "URL (http:// または https://)";
+      let tagsIn = document.createElement('input'); tagsIn.className = 'edit-input'; tagsIn.value = link.tags ? link.tags.join(', ') : ""; tagsIn.placeholder = "タグ (カンマ区切り)";
       container.appendChild(nameIn); container.appendChild(urlIn); container.appendChild(tagsIn);
       card.appendChild(container);
-      let btnDiv = document.createElement('div'); btnDiv.className="edit-buttons";
-      let saveBtn = document.createElement('button'); saveBtn.className="btn"; saveBtn.textContent="保存"; saveBtn.onclick = ()=>{
+      let btnDiv = document.createElement('div'); btnDiv.className = 'edit-buttons';
+      let saveBtn = document.createElement('button'); saveBtn.className = 'btn'; saveBtn.textContent = "保存";
+      saveBtn.onclick = ()=>{
         let newName = nameIn.value.trim(), newURL = urlIn.value.trim(), newTags = tagsIn.value.split(',').map(t=>t.trim()).filter(t=>t);
         if(newName && newURL) updateLinkInFirestore(link.id, { name:newName, url:newURL, tags:newTags });
         else alert("必須項目が未入力です！");
       };
-      let cancelBtn = document.createElement('button'); cancelBtn.className="btn"; cancelBtn.textContent="キャンセル"; cancelBtn.onclick = ()=>{ loadUserLinks(); };
+      let cancelBtn = document.createElement('button'); cancelBtn.className = 'btn'; cancelBtn.textContent = "キャンセル";
+      cancelBtn.onclick = ()=>{ loadUserLinks(); };
       btnDiv.appendChild(saveBtn); btnDiv.appendChild(cancelBtn);
       card.appendChild(btnDiv);
     }
     function renderLinks(filtered=null){
       let list = document.getElementById('linksList'); list.innerHTML = "";
       let disp = filtered !== null ? filtered : links;
-      disp.forEach((link, i)=>{ list.appendChild(createLinkCard(link,i)); });
-      initSortable();
+      disp.forEach((l, i)=>{ list.appendChild(createLinkCard(l, i)); });
     }
+    function renderTagList(){
+      let container = document.getElementById("tagList"); container.innerHTML = "";
+      let tags = new Set();
+      links.forEach(l=>{ if(l.tags) l.tags.forEach(t=> tags.add(t)); });
+      if(tags.size===0)return;
+      let all = document.createElement("span"); all.className = "tag-item"; all.textContent = "すべて";
+      all.onclick = ()=>{ renderLinks(); document.querySelectorAll("#tagList .tag-item").forEach(i=> i.classList.remove("active")); all.classList.add("active"); };
+      container.appendChild(all);
+      tags.forEach(t=>{
+        let sp = document.createElement("span"); sp.className = "tag-item"; sp.textContent = t;
+        sp.onclick = ()=>{ let filt = links.filter(l=>l.tags && l.tags.includes(t)); renderLinks(filt); document.querySelectorAll("#tagList .tag-item").forEach(i=> i.classList.remove("active")); sp.classList.add("active"); };
+        container.appendChild(sp);
+      });
+    }
+    document.getElementById('searchInput').addEventListener('input', function(){
+      let q = this.value.trim().toLowerCase(), filtered = links.filter(l=> 
+        l.name.toLowerCase().includes(q) || l.url.toLowerCase().includes(q) || (l.tags && l.tags.some(t=> t.toLowerCase().includes(q)))
+      );
+      renderLinks(filtered); renderTagList();
+    });
     function openAddModal(){
       document.getElementById('modalOverlay').style.display="block";
       document.getElementById('addLinkModal').style.display="block";
@@ -283,8 +367,8 @@
       }).catch(()=>{});
     });
     function submitNewLink(){
-      let nameIn = document.getElementById('modalLinkName'), url = document.getElementById('modalLinkURL').value.trim(), tagsRaw = document.getElementById('modalLinkTags').value.trim(),
-      tags = tagsRaw ? tagsRaw.split(',').map(t=>t.trim()).filter(t=>t) : [];
+      let nameIn = document.getElementById('modalLinkName'), url = document.getElementById('modalLinkURL').value.trim(),
+      tagsRaw = document.getElementById('modalLinkTags').value.trim(), tags = tagsRaw ? tagsRaw.split(',').map(t=>t.trim()).filter(t=>t) : [];
       if(!nameIn.value.trim() && url){
         fetch("https://api.allorigins.hexocode.repl.co/get?disableCache=true&url="+encodeURIComponent(url))
         .then(res=>res.json()).then(data=>{
@@ -296,7 +380,7 @@
     }
     function saveNewLink(name, url, tags){
       if(!name || !url){ alert("必須項目を入力してください！"); return; }
-      let duplicate = links.find(l => l.url.toLowerCase()===url.toLowerCase()|| l.name.toLowerCase()===name.toLowerCase());
+      let duplicate = links.find(l=> l.url.toLowerCase()===url.toLowerCase() || l.name.toLowerCase()===name.toLowerCase());
       if(duplicate){
         if(confirm("重複が検出されました。更新しますか？")){
           let merged = Array.from(new Set([...(duplicate.tags||[]), ...tags]));
@@ -305,34 +389,22 @@
         }
       } else { addLinkToFirestore({ name:name, url:url, tags:tags }); }
     }
-    document.getElementById('searchInput').addEventListener('input', function(){
-      let q = this.value.trim().toLowerCase(), filtered = links.filter(link=>{
-        return link.name.toLowerCase().includes(q) || link.url.toLowerCase().includes(q) ||
-        (link.tags && link.tags.some(t=>t.toLowerCase().includes(q)));
-      });
-      renderLinks(filtered); renderTagList();
-    });
-    function exportLinks(){
-      let dataStr = JSON.stringify(links,null,2), blob = new Blob([dataStr], {type:"application/json"}),
-      url = URL.createObjectURL(blob), a = document.createElement('a');
-      a.href=url; a.download="links_backup.json"; a.click(); URL.revokeObjectURL(url);
-    }
     document.getElementById('importInput').addEventListener('change', function(e){
       let file = e.target.files[0], reader = new FileReader();
       reader.onload = function(ev){
         try{
-          let imported = JSON.parse(ev.target.result);
-          if(Array.isArray(imported)){
+          let imp = JSON.parse(ev.target.result);
+          if(Array.isArray(imp)){
             let user = auth.currentUser; if(!user)return;
             db.collection("users").doc(user.uid).collection("links").get().then(snap=>{
-              let batch = db.batch();
-              snap.forEach(doc=>{ batch.delete(doc.ref); });
-              return batch.commit();
+              let b = db.batch();
+              snap.forEach(doc=>{ b.delete(doc.ref); });
+              return b.commit();
             }).then(()=>{
-              let proms = imported.map(d=>db.collection("users").doc(auth.currentUser.uid).collection("links").add(d));
+              let proms = imp.map(d=> db.collection("users").doc(auth.currentUser.uid).collection("links").add(d));
               return Promise.all(proms);
             }).then(()=>{ loadUserLinks(); alert("インポート成功！"); })
-            .catch(err=>{ alert("インポートエラー: "+err.message); });
+            .catch(err=>{ alert("インポート失敗: "+err.message); });
           } else { alert("形式エラー！"); }
         } catch(err){ alert("読み込み失敗！"); }
       };
@@ -360,14 +432,13 @@
         let snap = await db.collection("users").get();
         snap.forEach(doc=>{
           let d = doc.data(), row = document.createElement("tr");
-          let td1 = document.createElement("td"); td1.textContent = doc.id; row.appendChild(td1);
-          let td2 = document.createElement("td"); td2.textContent = d.email || ""; row.appendChild(td2);
-          let td3 = document.createElement("td"); td3.textContent = formatLoginTime(d.lastLogin || ""); row.appendChild(td3);
-          let td4 = document.createElement("td"); td4.textContent = d.isAdmin ? "はい" : "いいえ"; row.appendChild(td4);
-          let td5 = document.createElement("td");
+          let tdEmail = document.createElement("td"); tdEmail.textContent = d.email || ""; row.appendChild(tdEmail);
+          let tdLogin = document.createElement("td"); tdLogin.textContent = formatLoginTime(d.lastLogin || ""); row.appendChild(tdLogin);
+          let tdAdmin = document.createElement("td"); tdAdmin.textContent = d.isAdmin ? "〇" : "×"; row.appendChild(tdAdmin);
+          let tdAct = document.createElement("td");
           let btn1 = document.createElement("button"); btn1.className="btn"; btn1.textContent="変更"; btn1.onclick = ()=>{ modifyUserEmail(doc.id); };
           let btn2 = document.createElement("button"); btn2.className="btn"; btn2.textContent="削除"; btn2.onclick = ()=>{ deleteUserAccount(doc.id); };
-          td5.appendChild(btn1); td5.appendChild(btn2); row.appendChild(td5);
+          tdAct.appendChild(btn1); tdAct.appendChild(btn2); row.appendChild(tdAct);
           table.appendChild(row);
         });
       } catch(err){ alert("管理者データ取得失敗: "+err.message); }
@@ -383,7 +454,7 @@
         let dataStr = JSON.stringify(allData,null,2), blob = new Blob([dataStr],{type:"application/json"}),
             url = URL.createObjectURL(blob), a = document.createElement("a");
         a.href = url; a.download = "all_users_links.json"; a.click(); URL.revokeObjectURL(url);
-      }catch(err){ alert("全ユーザーエクスポート失敗: "+err.message); }
+      } catch(err){ alert("全ユーザーエクスポート失敗: "+err.message); }
     }
     async function modifyUserEmail(uid){
       let newE = prompt("新しいメールアドレスを入力してください:");
@@ -408,90 +479,9 @@
       localStorage.setItem('theme', document.body.classList.contains('light-theme') ? 'light' : 'dark');
     });
     function initSortable(){
-      let list = document.getElementById('linksList');
-      if(!document.getElementById('searchInput').value.trim()){
-        new Sortable(list, {
-          animation:150, fallbackOnBody:true, delay:50, delayOnTouchOnly:true, touchStartThreshold:3, swapThreshold:0.65,
-          onEnd: function(){
-            let cards = list.children, user = auth.currentUser;
-            if(!user)return; showOpSpinner();
-            let batch = db.batch();
-            for(let i=0;i<cards.length;i++){
-              let id = cards[i].getAttribute('data-id');
-              let ref = db.collection("users").doc(user.uid).collection("links").doc(id);
-              batch.update(ref, { order: i });
-            }
-            batch.commit().then(()=>{ hideOpSpinner(); loadUserLinks(); }).catch(e=>{ hideOpSpinner(); alert("順序更新失敗: "+e.message); });
-          }
-        });
-      }
+      // 使用上/下按钮方式排序，故此处不调用拖拽排序
     }
-    function renderLinks(filtered=null){
-      let list = document.getElementById('linksList'); list.innerHTML = "";
-      let disp = filtered!==null?filtered:links;
-      disp.forEach((l,i)=>{ list.appendChild(createLinkCard(l,i)); });
-      initSortable();
-    }
-    function renderTagList(){
-      let container = document.getElementById("tagList");
-      container.innerHTML = "";
-      let tags = new Set();
-      links.forEach(l=>{ if(l.tags) l.tags.forEach(t=> tags.add(t)); });
-      if(tags.size===0)return;
-      let all = document.createElement("span");
-      all.className = "tag-item";
-      all.textContent = "すべて";
-      all.onclick = ()=>{
-        renderLinks();
-        document.querySelectorAll("#tagList .tag-item").forEach(i=> i.classList.remove("active"));
-        all.classList.add("active");
-      };
-      container.appendChild(all);
-      tags.forEach(t=>{
-        let sp = document.createElement("span");
-        sp.className = "tag-item";
-        sp.textContent = t;
-        sp.onclick = ()=>{
-          let filt = links.filter(l=>l.tags && l.tags.includes(t));
-          renderLinks(filt);
-          document.querySelectorAll("#tagList .tag-item").forEach(i=> i.classList.remove("active"));
-          sp.classList.add("active");
-        };
-        container.appendChild(sp);
-      });
-    }
-    document.getElementById('searchInput').addEventListener('input', function(){
-      let q = this.value.trim().toLowerCase(), filtered = links.filter(l=> 
-        l.name.toLowerCase().includes(q) || l.url.toLowerCase().includes(q) || (l.tags && l.tags.some(t=>t.toLowerCase().includes(q)))
-      );
-      renderLinks(filtered); renderTagList();
-    });
-    function exportLinks(){
-      let s = JSON.stringify(links,null,2), blob = new Blob([s],{type:"application/json"}), url = URL.createObjectURL(blob),
-      a = document.createElement("a");
-      a.href = url; a.download = "links_backup.json"; a.click(); URL.revokeObjectURL(url);
-    }
-    document.getElementById('importInput').addEventListener('change', function(e){
-      let file = e.target.files[0], reader = new FileReader();
-      reader.onload = function(ev){
-        try{
-          let imp = JSON.parse(ev.target.result);
-          if(Array.isArray(imp)){
-            let user = auth.currentUser; if(!user)return;
-            db.collection("users").doc(user.uid).collection("links").get().then(snap=>{
-              let b = db.batch();
-              snap.forEach(doc=>{ b.delete(doc.ref); });
-              return b.commit();
-            }).then(()=>{
-              let proms = imp.map(d=> db.collection("users").doc(auth.currentUser.uid).collection("links").add(d));
-              return Promise.all(proms);
-            }).then(()=>{ loadUserLinks(); alert("インポート成功！"); })
-            .catch(err=>{ alert("インポート失敗: "+err.message); });
-          } else { alert("形式エラー！"); }
-        } catch(err){ alert("読み込み失敗！"); }
-      };
-      reader.readAsText(file);
-    });
+    // ここまで
   </script>
 </body>
 </html>
