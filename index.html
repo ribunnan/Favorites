@@ -11,74 +11,227 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx-style/0.8.13/xlsx.full.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
   <style>
+    /* 全局重置及最小高度设置，确保背景填满视口 */
+    html, body {
+      margin: 0;
+      padding: 0;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
     :root {
-      --bg-color: #202124; --text-color: #E8EAED; --container-bg: #303134; --border-color: #5f6368;
-      --link-color: #8ab4f8; --btn-bg: #8ab4f8; --btn-bg-hover: #669df6; --shadow-color: rgba(0,0,0,0.7);
+      --bg-color: #202124;
+      --text-color: #E8EAED;
+      --container-bg: #303134;
+      --border-color: #5f6368;
+      --link-color: #8ab4f8;
+      --btn-bg: #8ab4f8;
+      --btn-bg-hover: #669df6;
+      --shadow-color: rgba(0, 0, 0, 0.7);
       --trans-duration: 0.15s;
     }
     .light-theme {
-      --bg-color: #F1F3F4; --text-color: #202124; --container-bg: #FFFFFF; --border-color: #dadce0;
-      --link-color: #1a73e8; --btn-bg: #1a73e8; --btn-bg-hover: #1558b0; --shadow-color: rgba(0,0,0,0.1);
+      --bg-color: #F1F3F4;
+      --text-color: #202124;
+      --container-bg: #FFFFFF;
+      --border-color: #dadce0;
+      --link-color: #1a73e8;
+      --btn-bg: #1a73e8;
+      --btn-bg-hover: #1558b0;
+      --shadow-color: rgba(0, 0, 0, 0.1);
     }
-    body { font-family: 'Roboto', sans-serif; background-color: var(--bg-color); color: var(--text-color); margin: 0; padding: 20px; transition: background-color var(--trans-duration), color var(--trans-duration); }
-    body::before { content:""; position:fixed; top:0; left:0; width:100%; height:100%; background: radial-gradient(ellipse at center, rgba(0,0,0,0.3) 0%, transparent 80%); z-index:-1; }
-    .container { max-width:900px; margin:40px auto; padding:20px 20px 20px; background-color: var(--container-bg); border-radius:12px; box-shadow: 0 6px 20px var(--shadow-color); display:none; position:relative; }
-    /* 固定左上区域，用于显示切换用户信息 */
-    #viewUserDisplay { position: fixed; top: 0; left: 0; padding: 6px 10px; font-size: 14px; background: rgba(0,0,0,0.6); color: var(--link-color); border-radius: 0 0 8px 0; z-index:2300; display: none; }
-    .top-right-buttons { position: absolute; top:10px; right:10px; display: flex; gap:4px; z-index:2; }
-    .top-right-buttons button { padding:6px 8px; font-size:14px; }
-    .toolbar { display:flex; flex-wrap:wrap; gap:10px; margin-top:40px; margin-bottom:10px; }
-    .toolbar input.form-control { flex:1; height:40px; padding:0 10px; border:1px solid var(--border-color); border-radius:6px; background-color: var(--container-bg); color: var(--text-color); transition: border-color var(--trans-duration); }
-    .toolbar input.form-control:focus { border-color: var(--btn-bg); outline:none; }
-    .toolbar button { height:40px; padding:0 10px; border:none; border-radius:6px; background-color: var(--btn-bg); color:#fff; cursor:pointer; font-size:14px; transition: background-color var(--trans-duration), transform var(--trans-duration); }
+    body {
+      font-family: 'Roboto', sans-serif;
+      background-color: var(--bg-color);
+      color: var(--text-color);
+      padding: 20px;
+      transition: background-color var(--trans-duration), color var(--trans-duration);
+      position: relative;
+    }
+    body::before {
+      content:"";
+      position: fixed;
+      top: 0; 
+      left: 0;
+      width: 100%;
+      height: 100%;
+      /* 这里背景色与暗色主题一致，浅色主题下可根据需要做调整 */
+      background: radial-gradient(ellipse at center, rgba(0,0,0,0.3) 0%, transparent 80%);
+      z-index: -1;
+    }
+    .container {
+      max-width: 900px;
+      margin: 40px auto;
+      padding: 20px;
+      background-color: var(--container-bg);
+      border-radius: 12px;
+      box-shadow: 0 6px 20px var(--shadow-color);
+      display: none;
+      position: relative;
+    }
+    /* 固定左上区域，用于显示当前切换用户信息 */
+    #viewUserDisplay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      padding: 6px 10px;
+      font-size: 14px;
+      background: rgba(0,0,0,0.6);
+      color: var(--link-color);
+      border-radius: 0 0 8px 0;
+      z-index: 2300;
+      display: none;
+    }
+    /* 顶部按钮区域（没有页面标题，按钮靠右并间隙较小） */
+    .top-right-buttons {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      display: flex;
+      gap: 4px;
+      z-index: 2;
+    }
+    .top-right-buttons button {
+      padding: 6px 8px;
+      font-size: 14px;
+    }
+    .toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin: 60px 0 10px;
+    }
+    .toolbar input.form-control {
+      flex: 1;
+      height: 40px;
+      padding: 0 10px;
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      background-color: var(--container-bg);
+      color: var(--text-color);
+      transition: border-color var(--trans-duration);
+    }
+    .toolbar input.form-control:focus { border-color: var(--btn-bg); outline: none; }
+    .toolbar button {
+      height: 40px;
+      padding: 0 10px;
+      border: none;
+      border-radius: 6px;
+      background-color: var(--btn-bg);
+      color: #fff;
+      cursor: pointer;
+      font-size: 14px;
+      transition: background-color var(--trans-duration), transform var(--trans-duration);
+    }
     .toolbar button:hover { background-color: var(--btn-bg-hover); transform: translateY(-3px); }
-    hr { border:none; height:1px; background-color: var(--border-color); margin:20px 0; }
-    #tagList { margin-bottom:10px; display:flex; flex-wrap:wrap; gap:6px; }
-    #tagList .tag-item { background-color: var(--border-color); color: var(--text-color); padding:4px 8px; border-radius:4px; font-size:14px; cursor:pointer; transition: background-color var(--trans-duration); }
+    hr { border: none; height: 1px; background-color: var(--border-color); margin: 20px 0; }
+    #tagList {
+      margin-bottom: 10px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+    #tagList .tag-item {
+      background-color: var(--border-color);
+      color: var(--text-color);
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 14px;
+      cursor: pointer;
+      transition: background-color var(--trans-duration);
+    }
     #tagList .tag-item:hover { background-color: var(--btn-bg-hover); }
-    #tagList .tag-item.active { background-color: var(--btn-bg); color:#fff; }
-    .link-card { background-color: var(--container-bg); border:1px solid var(--border-color); border-radius:8px; padding:15px; margin-bottom:15px; box-shadow: 0 3px 10px var(--shadow-color); transition: transform var(--trans-duration); }
+    #tagList .tag-item.active { background-color: var(--btn-bg); color: #fff; }
+    .link-card {
+      background-color: var(--container-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 15px;
+      margin-bottom: 15px;
+      box-shadow: 0 3px 10px var(--shadow-color);
+      transition: transform var(--trans-duration);
+    }
     .link-card:hover { transform: translateY(-3px); }
-    .link-header { display:flex; align-items:center; margin-bottom:8px; }
-    .link-icon { width:32px; height:32px; margin-right:10px; border-radius:4px; object-fit:cover; }
-    .link-info { flex:1; }
-    .link-info a { color: var(--link-color); text-decoration:none; font-size:20px; font-weight:500; }
-    .link-info a:hover { text-decoration:underline; }
-    .tag { background-color: var(--border-color); color: var(--text-color); padding:3px 8px; border-radius:4px; font-size:12px; margin:2px 4px 2px 0; }
-    .btn, .btn-add { padding:8px 12px; border:none; border-radius:4px; background-color: var(--btn-bg); color:#fff; cursor:pointer; transition: background-color var(--trans-duration), transform var(--trans-duration); font-size:14px; }
+    .link-header { display: flex; align-items: center; margin-bottom: 8px; }
+    .link-icon { width: 32px; height: 32px; margin-right: 10px; border-radius: 4px; object-fit: cover; }
+    .link-info { flex: 1; }
+    .link-info a { color: var(--link-color); text-decoration: none; font-size: 20px; font-weight: 500; }
+    .link-info a:hover { text-decoration: underline; }
+    .tag {
+      background-color: var(--border-color);
+      color: var(--text-color);
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-size: 12px;
+      margin: 2px 4px 2px 0;
+    }
+    .btn, .btn-add {
+      padding: 8px 12px;
+      border: none;
+      border-radius: 4px;
+      background-color: var(--btn-bg);
+      color: #fff;
+      cursor: pointer;
+      transition: background-color var(--trans-duration), transform var(--trans-duration);
+      font-size: 14px;
+    }
     .btn:hover, .btn-add:hover { background-color: var(--btn-bg-hover); transform: translateY(-2px); }
-    .link-btn { margin-right:8px; }
-    .edit-container { display:block; }
-    .edit-container input { width:100%; box-sizing:border-box; margin-bottom:8px; padding:8px; border:1px solid var(--border-color); border-radius:6px; background-color: var(--container-bg); color: var(--text-color); transition: border-color var(--trans-duration); }
-    .edit-container input:focus { border-color: var(--btn-bg); outline:none; }
-    .edit-buttons { display:flex; gap:10px; margin-top:8px; }
+    .link-btn { margin-right: 8px; }
+    .edit-container { display: block; }
+    .edit-container input {
+      width: 100%;
+      box-sizing: border-box;
+      margin-bottom: 8px;
+      padding: 8px;
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      background-color: var(--container-bg);
+      color: var(--text-color);
+      transition: border-color var(--trans-duration);
+    }
+    .edit-container input:focus { border-color: var(--btn-bg); outline: none; }
+    .edit-buttons { display: flex; gap: 10px; margin-top: 8px; }
     /* 模态框 */
     #authModal, #addLinkModal, #adminModal {
-      position: fixed; top:50%; left:50%; transform:translate(-50%,-50%);
-      background-color: var(--container-bg); border:1px solid var(--border-color); border-radius:8px;
-      width:90%; max-width:400px; padding:20px; z-index:2100; box-shadow: 0 6px 20px var(--shadow-color); display:none;
+      position: fixed;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      background-color: var(--container-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      width: 90%; max-width: 400px;
+      padding: 20px;
+      z-index: 2100;
+      box-shadow: 0 6px 20px var(--shadow-color);
+      display: none;
     }
-    #authModal h2, #addLinkModal h2, #adminModal h2 { text-align:center; margin-bottom:20px; }
-    .modal-btns-row { display:flex; justify-content:flex-end; gap:8px; margin-top:10px; }
-    #modalOverlay { position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.5); z-index:2050; display:none; }
+    #authModal h2, #addLinkModal h2, #adminModal h2 { text-align: center; margin-bottom: 20px; }
+    .modal-btns-row { display: flex; justify-content: flex-end; gap: 8px; margin-top: 10px; }
+    #modalOverlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 2050; display: none; }
     /* 管理画面表格 */
-    #adminModal table { width:100%; border-collapse:collapse; }
-    #adminModal th, #adminModal td { padding:6px 8px; border:1px solid var(--border-color); font-size:14px; line-height:1.4; }
-    /* 操作按钮左右对齐，增加间隙 */
-    #adminModal td:nth-child(4) { display:flex; justify-content:space-between; align-items:center; }
-    #adminModal td:nth-child(4) > div { flex:1; }
-    .spinner { border:4px solid rgba(0,0,0,0.1); width:24px; height:24px; border-radius:50%; border-left-color: var(--btn-bg); animation: spin 1s linear infinite; position: fixed; top:50%; left:50%; transform: translate(-50%,-50%); z-index:2300; }
-    @keyframes spin { to { transform:rotate(360deg); } }
+    #adminModal table { width: 100%; border-collapse: collapse; }
+    #adminModal th, #adminModal td { padding: 6px 8px; border: 1px solid var(--border-color); font-size: 14px; line-height: 1.4; }
+    /* 登录等待 Spinner 固定在页面中心且不动 */
+    .spinner { border: 4px solid rgba(0,0,0,0.1); width: 24px; height: 24px; border-radius: 50%; border-left-color: var(--btn-bg); animation: spin 1s linear infinite; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index:2300; }
+    @keyframes spin { to { transform: rotate(360deg); } }
     @media (max-width:600px) {
       .container { margin:10px; padding:15px; }
-      .top-right-buttons { position: static; justify-content:flex-end; gap:4px; margin-bottom:10px; }
+      .top-right-buttons { position: static; justify-content: flex-end; gap:4px; margin-bottom:10px; }
       .toolbar input.form-control { height:36px; padding:6px; font-size:14px; }
       .toolbar button { height:36px; padding:6px 8px; font-size:12px; }
       .link-card { padding:10px; }
-      .modal-btns-row { flex-direction:column; align-items:stretch; }
-      .modal-btns-row button { width:100%; }
+      .modal-btns-row { flex-direction: column; align-items: stretch; }
+      .modal-btns-row button { width: 100%; }
     }
-    .order-btn { padding:4px 6px; font-size:12px; border:none; background-color: var(--btn-bg); color:#fff; border-radius:4px; cursor:pointer; transition: background-color var(--trans-duration); }
+    .order-btn {
+      padding: 4px 6px;
+      font-size: 12px;
+      border: none;
+      background-color: var(--btn-bg);
+      color: #fff;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: background-color var(--trans-duration);
+    }
     .order-btn:hover { background-color: var(--btn-bg-hover); }
   </style>
 </head>
@@ -93,7 +246,9 @@
         <button class="btn-add" id="loginButton" onclick="login()">ログイン</button>
         <button class="btn-add" onclick="switchToRegister()">アカウント作成</button>
       </div>
-      <div style="text-align:center;"><div id="loginSpinner" class="spinner" style="display:none;"></div></div>
+      <div style="text-align:center;">
+        <div id="loginSpinner" class="spinner" style="display:none;"></div>
+      </div>
     </div>
     <div id="registerForm" style="display:none;">
       <h2>登録</h2>
@@ -166,159 +321,232 @@
     firebase.auth().setPersistence(firebase.auth.Auth.Persistence.LOCAL);
     const db = firebase.firestore(), auth = firebase.auth();
     let links = [], viewingUser = null;
-    function getFaviconUrl(url){ try{ return new URL(url).origin+'/favicon.ico'; }catch(e){ return ""; } }
+    function getFaviconUrl(url){ try{ return new URL(url).origin + '/favicon.ico'; } catch(e){ return ""; } }
     function showOpSpinner(){ document.getElementById('opSpinner').style.display = 'block'; }
     function hideOpSpinner(){ document.getElementById('opSpinner').style.display = 'none'; }
     function getCurrentUID(){ return viewingUser ? viewingUser.uid : auth.currentUser.uid; }
     auth.onAuthStateChanged(async user=>{
       if(user){
-        await updateUserProfile(user);
-        loadUserLinks();
-        document.getElementById("authModal").style.display="none";
-        document.getElementById("modalOverlay").style.display="none";
-        document.getElementById("mainContent").style.display="block";
+        await updateUserProfile(user); loadUserLinks();
+        document.getElementById("authModal").style.display = "none";
+        document.getElementById("modalOverlay").style.display = "none";
+        document.getElementById("mainContent").style.display = "block";
         let ud = (await db.collection("users").doc(user.uid).get()).data();
         document.getElementById("adminBtn").style.display = (ud && ud.isAdmin) ? "inline-block" : "none";
-      } else { document.getElementById("mainContent").style.display="none"; openAuthModal(); }
+      } else { document.getElementById("mainContent").style.display = "none"; openAuthModal(); }
     });
     async function updateUserProfile(user){
       let data = { email:user.email, lastLogin:new Date().toISOString(), isAdmin:(user.email==="ribunnan@ribunnan.com") };
-      await db.collection("users").doc(user.uid).set(data,{merge:true});
+      await db.collection("users").doc(user.uid).set(data, { merge: true });
     }
     function openAuthModal(){ document.getElementById("authModal").style.display="block"; document.getElementById("modalOverlay").style.display="block"; switchToLogin(); }
     function switchToRegister(){ document.getElementById("loginForm").style.display="none"; document.getElementById("registerForm").style.display="block"; }
     function switchToLogin(){ document.getElementById("registerForm").style.display="none"; document.getElementById("loginForm").style.display="block"; }
     function login(){
       let email = document.getElementById("loginUsername").value.trim(), password = document.getElementById("loginPassword").value;
-      if(!email||!password){ alert("必須項目を入力してください！"); return; }
+      if(!email || !password){ alert("必須項目を入力してください！"); return; }
       let btn = document.getElementById("loginButton"), sp = document.getElementById("loginSpinner");
       btn.disabled = true; sp.style.display = "inline-block";
-      auth.signInWithEmailAndPassword(email,password)
+      auth.signInWithEmailAndPassword(email, password)
         .then(()=>{ sp.style.display = "none"; btn.disabled = false; })
-        .catch(error=>{ sp.style.display = "none"; btn.disabled = false; alert("ログインエラー: "+error.message); });
+        .catch(error=>{ sp.style.display = "none"; btn.disabled = false; alert("ログインエラー: " + error.message); });
     }
     function register(){
-      let email = document.getElementById("registerUsername").value.trim(), password = document.getElementById("registerPassword").value, confirm = document.getElementById("registerPasswordConfirm").value;
-      if(!email||!password||!confirm){ alert("必須項目を入力してください！"); return; }
-      if(password!==confirm){ alert("パスワードが一致しません！"); return; }
-      auth.createUserWithEmailAndPassword(email,password).catch(error=>{ alert("登録エラー: "+error.message); });
+      let email = document.getElementById("registerUsername").value.trim(),
+          password = document.getElementById("registerPassword").value,
+          confirm = document.getElementById("registerPasswordConfirm").value;
+      if(!email || !password || !confirm){ alert("必須項目を入力してください！"); return; }
+      if(password !== confirm){ alert("パスワードが一致しません！"); return; }
+      auth.createUserWithEmailAndPassword(email, password).catch(error=>{ alert("登録エラー: " + error.message); });
     }
     function confirmLogout(){ if(confirm("ログアウトしますか？")) logout(); }
-    function logout(){ auth.signOut().catch(error=>{ alert("ログアウトエラー: "+error.message); }); }
+    function logout(){ auth.signOut().catch(error=>{ alert("ログアウトエラー: " + error.message); }); }
     function loadUserLinks(){
-      let uid = getCurrentUID();
-      db.collection("users").doc(uid).collection("links").orderBy('order').get()
+      db.collection("users").doc(getCurrentUID()).collection("links").orderBy('order').get()
         .then(snap=>{
           links = []; snap.forEach(doc=>{ let d = doc.data(); d.id = doc.id; links.push(d); });
           renderLinks(); renderTagList();
         })
-        .catch(err=>{ console.error("読み込み失敗:",err); });
+        .catch(err=>{ console.error("読み込み失敗:", err); });
     }
     function addLinkToFirestore(data){
       data.order = Date.now();
       showOpSpinner();
       db.collection("users").doc(getCurrentUID()).collection("links").add(data)
         .then(()=>{ hideOpSpinner(); loadUserLinks(); closeAddModal(); })
-        .catch(err=>{ hideOpSpinner(); alert("追加失敗: "+err.message); });
+        .catch(err=>{ hideOpSpinner(); alert("追加失敗: " + err.message); });
     }
     function updateLinkInFirestore(id, data){
       showOpSpinner();
       db.collection("users").doc(getCurrentUID()).collection("links").doc(id).update(data)
         .then(()=>{ hideOpSpinner(); loadUserLinks(); })
-        .catch(err=>{ hideOpSpinner(); alert("更新失敗: "+err.message); });
+        .catch(err=>{ hideOpSpinner(); alert("更新失敗: " + err.message); });
     }
     function deleteLinkFromFirestore(id){
       showOpSpinner();
       db.collection("users").doc(getCurrentUID()).collection("links").doc(id).delete()
         .then(()=>{ hideOpSpinner(); loadUserLinks(); })
-        .catch(err=>{ hideOpSpinner(); alert("削除失敗: "+err.message); });
+        .catch(err=>{ hideOpSpinner(); alert("削除失敗: " + err.message); });
     }
     function createLinkCard(link, idx){
-      let card = document.createElement('div'); card.className = 'link-card'; card.setAttribute('data-id',link.id);
-      let header = document.createElement('div'); header.className = 'link-header';
-      let icon = document.createElement('img'); icon.className = 'link-icon'; icon.src = getFaviconUrl(link.url); icon.alt = "";
-      icon.onerror = function(){ this.style.display="none"; };
+      let card = document.createElement('div');
+      card.className = 'link-card';
+      card.setAttribute('data-id', link.id);
+      let header = document.createElement('div');
+      header.className = 'link-header';
+      let icon = document.createElement('img');
+      icon.className = 'link-icon';
+      icon.src = getFaviconUrl(link.url);
+      icon.alt = "";
+      icon.onerror = function(){ this.style.display = "none"; };
       header.appendChild(icon);
-      let info = document.createElement('div'); info.className = 'link-info';
-      let a = document.createElement('a'); a.href = link.url; a.textContent = link.name; a.target = '_blank';
+      let info = document.createElement('div');
+      info.className = 'link-info';
+      let a = document.createElement('a');
+      a.href = link.url;
+      a.textContent = link.name;
+      a.target = '_blank';
       info.appendChild(a);
       if(link.tags && link.tags.length){
         link.tags.forEach(t=>{
-          let sp = document.createElement('span'); sp.className = 'tag'; sp.textContent = t; info.appendChild(sp);
+          let sp = document.createElement('span');
+          sp.className = 'tag';
+          sp.textContent = t;
+          info.appendChild(sp);
         });
       }
-      header.appendChild(info); card.appendChild(header);
+      header.appendChild(info);
+      card.appendChild(header);
       let orderDiv = document.createElement('div');
-      orderDiv.style.display = "flex"; orderDiv.style.flexDirection = "column";
-      orderDiv.style.justifyContent = "center"; orderDiv.style.gap = "2px";
-      let upBtn = document.createElement('button'); upBtn.className = "order-btn"; upBtn.textContent = "▲"; upBtn.onclick = ()=>{ moveLink(idx, -1); };
-      let downBtn = document.createElement('button'); downBtn.className = "order-btn"; downBtn.textContent = "▼"; downBtn.onclick = ()=>{ moveLink(idx, 1); };
-      orderDiv.appendChild(upBtn); orderDiv.appendChild(downBtn);
+      orderDiv.style.display = "flex";
+      orderDiv.style.flexDirection = "column";
+      orderDiv.style.justifyContent = "center";
+      orderDiv.style.gap = "2px";
+      let upBtn = document.createElement('button');
+      upBtn.className = "order-btn";
+      upBtn.textContent = "▲";
+      upBtn.onclick = ()=>{ moveLink(idx, -1); };
+      let downBtn = document.createElement('button');
+      downBtn.className = "order-btn";
+      downBtn.textContent = "▼";
+      downBtn.onclick = ()=>{ moveLink(idx, 1); };
+      orderDiv.appendChild(upBtn);
+      orderDiv.appendChild(downBtn);
       let actionDiv = document.createElement('div');
-      actionDiv.style.display = "flex"; actionDiv.style.justifyContent = "space-between"; actionDiv.style.alignItems = "center"; actionDiv.style.marginTop = "10px";
-      let btnDiv = document.createElement('div'); btnDiv.style.display = "flex"; btnDiv.style.gap = "10px";
-      let editBtn = document.createElement('button'); editBtn.className = "btn link-btn"; editBtn.textContent = "編集"; editBtn.onclick = ()=>{ enterEditMode(card, link, idx); };
-      let delBtn = document.createElement('button'); delBtn.className = "btn"; delBtn.textContent = "削除"; delBtn.onclick = ()=>{ if(confirm("削除しますか？")) deleteLinkFromFirestore(link.id); };
-      btnDiv.appendChild(editBtn); btnDiv.appendChild(delBtn);
-      actionDiv.appendChild(btnDiv); actionDiv.appendChild(orderDiv);
+      actionDiv.style.display = "flex";
+      actionDiv.style.justifyContent = "space-between";
+      actionDiv.style.alignItems = "center";
+      actionDiv.style.marginTop = "10px";
+      let btnDiv = document.createElement('div');
+      btnDiv.style.display = "flex";
+      btnDiv.style.gap = "10px";
+      let editBtn = document.createElement('button');
+      editBtn.className = "btn link-btn";
+      editBtn.textContent = "編集";
+      editBtn.onclick = ()=>{ enterEditMode(card, link, idx); };
+      let delBtn = document.createElement('button');
+      delBtn.className = "btn";
+      delBtn.textContent = "削除";
+      delBtn.onclick = ()=>{ if(confirm("削除しますか？")) deleteLinkFromFirestore(link.id); };
+      btnDiv.appendChild(editBtn);
+      btnDiv.appendChild(delBtn);
+      actionDiv.appendChild(btnDiv);
+      actionDiv.appendChild(orderDiv);
       card.appendChild(actionDiv);
       return card;
     }
     function moveLink(idx, offset){
-      let newIdx = idx + offset; if(newIdx < 0 || newIdx >= links.length)return;
-      let temp = links[idx].order; links[idx].order = links[newIdx].order; links[newIdx].order = temp;
-      let uid = getCurrentUID();
+      let newIdx = idx + offset;
+      if(newIdx < 0 || newIdx >= links.length) return;
+      let temp = links[idx].order;
+      links[idx].order = links[newIdx].order;
+      links[newIdx].order = temp;
       let batch = db.batch();
-      let ref1 = db.collection("users").doc(uid).collection("links").doc(links[idx].id);
-      let ref2 = db.collection("users").doc(uid).collection("links").doc(links[newIdx].id);
+      let ref1 = db.collection("users").doc(getCurrentUID()).collection("links").doc(links[idx].id);
+      let ref2 = db.collection("users").doc(getCurrentUID()).collection("links").doc(links[newIdx].id);
       batch.update(ref1, { order: links[idx].order });
       batch.update(ref2, { order: links[newIdx].order });
-      batch.commit().then(()=>{ loadUserLinks(); }).catch(e=>{ alert("並び替え失敗: "+e.message); });
+      batch.commit().then(()=>{ loadUserLinks(); }).catch(e=>{ alert("並び替え失敗: " + e.message); });
     }
     function enterEditMode(card, link, idx){
       card.innerHTML = "";
-      let container = document.createElement('div'); container.className = 'edit-container';
-      let nameIn = document.createElement('input'); nameIn.value = link.name; nameIn.placeholder = "リンク名";
-      let urlIn = document.createElement('input'); urlIn.value = link.url; urlIn.placeholder = "URL (http:// または https://)";
-      let tagsIn = document.createElement('input'); tagsIn.value = link.tags ? link.tags.join(',') : ""; tagsIn.placeholder = "タグ (カンマ区切り)";
-      container.appendChild(nameIn); container.appendChild(urlIn); container.appendChild(tagsIn);
+      let container = document.createElement('div');
+      container.className = 'edit-container';
+      let nameIn = document.createElement('input');
+      nameIn.value = link.name;
+      nameIn.placeholder = "リンク名";
+      let urlIn = document.createElement('input');
+      urlIn.value = link.url;
+      urlIn.placeholder = "URL (http:// または https://)";
+      let tagsIn = document.createElement('input');
+      tagsIn.value = link.tags ? link.tags.join(',') : "";
+      tagsIn.placeholder = "タグ (カンマ区切り)";
+      container.appendChild(nameIn);
+      container.appendChild(urlIn);
+      container.appendChild(tagsIn);
       card.appendChild(container);
-      let btnDiv = document.createElement('div'); btnDiv.className = 'edit-buttons';
-      let saveBtn = document.createElement('button'); saveBtn.className = 'btn'; saveBtn.textContent = "保存";
+      let btnDiv = document.createElement('div');
+      btnDiv.className = 'edit-buttons';
+      let saveBtn = document.createElement('button');
+      saveBtn.className = 'btn';
+      saveBtn.textContent = "保存";
       saveBtn.onclick = ()=>{
-        let newName = nameIn.value.trim(), newURL = urlIn.value.trim(), newTags = tagsIn.value.split(',').map(t=>t.trim()).filter(t=>t);
-        if(newName && newURL) updateLinkInFirestore(link.id, { name:newName, url:newURL, tags:newTags });
+        let newName = nameIn.value.trim(),
+            newURL = urlIn.value.trim(),
+            newTags = tagsIn.value.split(',').map(t => t.trim()).filter(t => t);
+        if(newName && newURL) updateLinkInFirestore(link.id, { name: newName, url: newURL, tags: newTags });
         else alert("必須項目が未入力です！");
       };
-      let cancelBtn = document.createElement('button'); cancelBtn.className = 'btn'; cancelBtn.textContent = "キャンセル";
+      let cancelBtn = document.createElement('button');
+      cancelBtn.className = 'btn';
+      cancelBtn.textContent = "キャンセル";
       cancelBtn.onclick = ()=>{ loadUserLinks(); };
-      btnDiv.appendChild(saveBtn); btnDiv.appendChild(cancelBtn);
+      btnDiv.appendChild(saveBtn);
+      btnDiv.appendChild(cancelBtn);
       card.appendChild(btnDiv);
     }
-    function renderLinks(filtered=null){
-      let list = document.getElementById('linksList'); list.innerHTML = "";
-      let disp = filtered !== null ? filtered : links;
-      disp.forEach((l,i)=>{ list.appendChild(createLinkCard(l,i)); });
+    function renderLinks(filtered = null){
+      let list = document.getElementById('linksList');
+      list.innerHTML = "";
+      let disp = (filtered !== null) ? filtered : links;
+      disp.forEach((l, i)=>{ list.appendChild(createLinkCard(l,i)); });
     }
     function renderTagList(){
-      let container = document.getElementById("tagList"); container.innerHTML = "";
+      let container = document.getElementById("tagList");
+      container.innerHTML = "";
       let tags = new Set();
-      links.forEach(l=>{ if(l.tags) l.tags.forEach(t=> tags.add(t)); });
-      if(tags.size===0)return;
-      let all = document.createElement("span"); all.className = "tag-item"; all.textContent = "すべて";
-      all.onclick = ()=>{ renderLinks(); document.querySelectorAll("#tagList .tag-item").forEach(i=> i.classList.remove("active")); all.classList.add("active"); };
+      links.forEach(l=> { if(l.tags) l.tags.forEach(t => tags.add(t)); });
+      if(tags.size === 0) return;
+      let all = document.createElement("span");
+      all.className = "tag-item";
+      all.textContent = "すべて";
+      all.onclick = ()=>{
+        renderLinks();
+        document.querySelectorAll("#tagList .tag-item").forEach(i=> i.classList.remove("active"));
+        all.classList.add("active");
+      };
       container.appendChild(all);
       tags.forEach(t=>{
-        let sp = document.createElement("span"); sp.className = "tag-item"; sp.textContent = t;
-        sp.onclick = ()=>{ let filt = links.filter(l=>l.tags && l.tags.includes(t)); renderLinks(filt); document.querySelectorAll("#tagList .tag-item").forEach(i=> i.classList.remove("active")); sp.classList.add("active"); };
+        let sp = document.createElement("span");
+        sp.className = "tag-item";
+        sp.textContent = t;
+        sp.onclick = ()=>{
+          let filt = links.filter(l => l.tags && l.tags.includes(t));
+          renderLinks(filt);
+          document.querySelectorAll("#tagList .tag-item").forEach(i=> i.classList.remove("active"));
+          sp.classList.add("active");
+        };
         container.appendChild(sp);
       });
     }
     document.getElementById('searchInput').addEventListener('input', function(){
-      let q = this.value.trim().toLowerCase(), filtered = links.filter(l=> 
-        l.name.toLowerCase().includes(q) || l.url.toLowerCase().includes(q) || (l.tags && l.tags.some(t=>t.toLowerCase().includes(q)))
-      );
-      renderLinks(filtered); renderTagList();
+      let q = this.value.trim().toLowerCase(),
+          filtered = links.filter(l =>
+            l.name.toLowerCase().includes(q) || l.url.toLowerCase().includes(q) ||
+            (l.tags && l.tags.some(t => t.toLowerCase().includes(q)))
+          );
+      renderLinks(filtered);
+      renderTagList();
     });
     function openAddModal(){
       document.getElementById('modalOverlay').style.display="block";
@@ -335,17 +563,30 @@
       let url = this.value.trim(), nameIn = document.getElementById('modalLinkName');
       if(!url || nameIn.value.trim()) return;
       fetch("https://api.allorigins.hexocode.repl.co/get?disableCache=true&url="+encodeURIComponent(url))
-        .then(res=>res.json()).then(data=>{ let m = data.contents.match(/<title>([^<]+)<\/title>/i); if(m && m[1]) nameIn.value = m[1].trim(); }).catch(()=>{});
+      .then(res=>res.json())
+      .then(data=>{
+        let m = data.contents.match(/<title>([^<]+)<\/title>/i);
+        if(m && m[1]) nameIn.value = m[1].trim();
+      })
+      .catch(()=>{});
     });
     function submitNewLink(){
-      let nameIn = document.getElementById('modalLinkName'), url = document.getElementById('modalLinkURL').value.trim(),
+      let nameIn = document.getElementById('modalLinkName'),
+          url = document.getElementById('modalLinkURL').value.trim(),
           tagsRaw = document.getElementById('modalLinkTags').value.trim(),
           tags = tagsRaw ? tagsRaw.split(',').map(t=>t.trim()).filter(t=>t) : [];
       if(!nameIn.value.trim() && url){
         fetch("https://api.allorigins.hexocode.repl.co/get?disableCache=true&url="+encodeURIComponent(url))
-          .then(res=>res.json()).then(data=>{ let m = data.contents.match(/<title>([^<]+)<\/title>/i); if(m && m[1]) nameIn.value = m[1].trim(); saveNewLink(nameIn.value.trim(), url, tags); })
-          .catch(()=>{ saveNewLink(nameIn.value.trim(), url, tags); });
-      } else { saveNewLink(nameIn.value.trim(), url, tags); }
+        .then(res=>res.json())
+        .then(data=>{
+          let m = data.contents.match(/<title>([^<]+)<\/title>/i);
+          if(m && m[1]) nameIn.value = m[1].trim();
+          saveNewLink(nameIn.value.trim(), url, tags);
+        })
+        .catch(()=>{ saveNewLink(nameIn.value.trim(), url, tags); });
+      } else {
+        saveNewLink(nameIn.value.trim(), url, tags);
+      }
     }
     function saveNewLink(name, url, tags){
       if(!name || !url){ alert("必須項目を入力してください！"); return; }
@@ -353,10 +594,12 @@
       if(duplicate){
         if(confirm("重複が検出されました。更新しますか？")){
           let merged = Array.from(new Set([...(duplicate.tags||[]), ...tags]));
-          updateLinkInFirestore(duplicate.id, { name:name, url:url, tags:merged });
+          updateLinkInFirestore(duplicate.id, { name: name, url: url, tags: merged });
           closeAddModal();
         }
-      } else { addLinkToFirestore({ name:name, url:url, tags:tags }); }
+      } else {
+        addLinkToFirestore({ name: name, url: url, tags: tags });
+      }
     }
     document.getElementById('importInput').addEventListener('change', function(e){
       let file = e.target.files[0], reader = new FileReader();
@@ -366,7 +609,9 @@
           if(Array.isArray(imp)){
             let user = auth.currentUser; if(!user)return;
             db.collection("users").doc(user.uid).collection("links").get().then(snap=>{
-              let b = db.batch(); snap.forEach(doc=>{ b.delete(doc.ref); }); return b.commit();
+              let b = db.batch();
+              snap.forEach(doc=>{ b.delete(doc.ref); });
+              return b.commit();
             }).then(()=>{
               let proms = imp.map(d=> db.collection("users").doc(auth.currentUser.uid).collection("links").add(d));
               return Promise.all(proms);
@@ -399,27 +644,47 @@
         let snap = await db.collection("users").get();
         snap.forEach(doc=>{
           let d = doc.data(), row = document.createElement("tr");
-          let tdEmail = document.createElement("td"); tdEmail.textContent = d.email || ""; row.appendChild(tdEmail);
-          let tdLogin = document.createElement("td"); tdLogin.textContent = formatLoginTime(d.lastLogin || ""); row.appendChild(tdLogin);
-          let tdAdmin = document.createElement("td"); tdAdmin.style.textAlign = "center"; tdAdmin.textContent = d.isAdmin ? "〇" : "×"; row.appendChild(tdAdmin);
-          let tdAct = document.createElement("td"); tdAct.style.display = "flex"; tdAct.style.justifyContent = "space-between";
-          let leftDiv = document.createElement("div"); leftDiv.style.flex = "1";
-          let btnModify = document.createElement("button"); btnModify.className="btn"; btnModify.style.marginRight="4px"; btnModify.textContent="変更";
+          let tdEmail = document.createElement("td");
+          tdEmail.textContent = d.email || "";
+          row.appendChild(tdEmail);
+          let tdLogin = document.createElement("td");
+          tdLogin.textContent = formatLoginTime(d.lastLogin || "");
+          row.appendChild(tdLogin);
+          let tdAdmin = document.createElement("td");
+          tdAdmin.style.textAlign = "center";
+          tdAdmin.textContent = d.isAdmin ? "〇" : "×";
+          row.appendChild(tdAdmin);
+          let tdAct = document.createElement("td");
+          tdAct.style.display = "flex";
+          tdAct.style.justifyContent = "space-between";
+          let leftDiv = document.createElement("div");
+          leftDiv.style.flex = "1";
+          let btnModify = document.createElement("button");
+          btnModify.className = "btn";
+          btnModify.style.marginRight = "4px";
+          btnModify.textContent = "変更";
           btnModify.onclick = ()=>{ modifyUserEmail(doc.id); };
           leftDiv.appendChild(btnModify);
-          let rightDiv = document.createElement("div"); rightDiv.style.flex = "1"; rightDiv.style.textAlign = "right";
-          let btnDelete = document.createElement("button"); btnDelete.className="btn"; btnDelete.style.marginRight="4px"; btnDelete.textContent="削除";
+          let rightDiv = document.createElement("div");
+          rightDiv.style.flex = "1";
+          rightDiv.style.textAlign = "right";
+          let btnDelete = document.createElement("button");
+          btnDelete.className = "btn";
+          btnDelete.style.marginRight = "4px";
+          btnDelete.textContent = "削除";
           btnDelete.onclick = ()=>{ deleteUserAccount(doc.id); };
-          let btnSwitch = document.createElement("button"); btnSwitch.className="btn"; btnSwitch.style.marginRight="4px"; btnSwitch.textContent="切替";
-          btnSwitch.onclick = ()=>{ switchToUser(doc.id, d.email); };
-          let btnExport = document.createElement("button"); btnExport.className="btn"; btnExport.textContent="エクスポート";
+          let btnExport = document.createElement("button");
+          btnExport.className = "btn";
+          btnExport.textContent = "エクスポート";
           btnExport.onclick = ()=>{ exportUserLinks(doc.id); };
-          rightDiv.appendChild(btnDelete); rightDiv.appendChild(btnSwitch); rightDiv.appendChild(btnExport);
-          tdAct.appendChild(leftDiv); tdAct.appendChild(rightDiv);
+          rightDiv.appendChild(btnDelete);
+          rightDiv.appendChild(btnExport);
+          tdAct.appendChild(leftDiv);
+          tdAct.appendChild(rightDiv);
           row.appendChild(tdAct);
           table.appendChild(row);
         });
-      } catch(err){ alert("管理者データ取得失敗: "+err.message); }
+      } catch(err){ alert("管理者データ取得失敗: " + err.message); }
     }
     async function downloadAllUserLinks(){
       try{
@@ -432,22 +697,25 @@
         let s = JSON.stringify(allData,null,2), blob = new Blob([s], { type:"application/json" });
         let url = URL.createObjectURL(blob), a = document.createElement("a");
         a.href = url; a.download = "all_users_links.json"; a.click(); URL.revokeObjectURL(url);
-      }catch(err){ alert("全ユーザーエクスポート失敗: "+err.message); }
+      }catch(err){ alert("全ユーザーエクスポート失敗: " + err.message); }
     }
     async function exportUserLinks(uid){
       try{
         let snap = await db.collection("users").doc(uid).collection("links").get(), arr = [];
         snap.forEach(doc=>{ let d = doc.data(); d.id = doc.id; arr.push(d); });
-        let s = JSON.stringify(arr,null,2), blob = new Blob([s],{type:"application/json"});
+        let s = JSON.stringify(arr,null,2), blob = new Blob([s], { type:"application/json" });
         let url = URL.createObjectURL(blob), a = document.createElement("a");
         a.href = url; a.download = "user_links_"+uid+".json"; a.click(); URL.revokeObjectURL(url);
-      } catch(err){ alert("ユーザーリンクエクスポート失敗: "+err.message); }
+      } catch(err){ alert("ユーザーリンクエクスポート失敗: " + err.message); }
     }
     async function modifyUserEmail(uid){
       let newE = prompt("新しいメールアドレスを入力してください:");
       if(!newE)return;
-      try{ await db.collection("users").doc(uid).update({ email:newE }); alert("更新完了。"); renderAdminData(); }
-      catch(err){ alert("更新失敗: "+err.message); }
+      try{ 
+        await db.collection("users").doc(uid).update({ email: newE });
+        alert("更新完了。");
+        renderAdminData();
+      } catch(err){ alert("更新失敗: " + err.message); }
     }
     async function deleteUserAccount(uid){
       if(!confirm("このアカウントを削除しますか？")) return;
@@ -457,13 +725,14 @@
         snap.forEach(doc=>{ batch.delete(doc.ref); });
         await batch.commit();
         await db.collection("users").doc(uid).delete();
-        alert("削除完了。"); renderAdminData();
-      } catch(err){ alert("削除失敗: "+err.message); }
+        alert("削除完了。");
+        renderAdminData();
+      } catch(err){ alert("削除失敗: " + err.message); }
     }
     if(localStorage.getItem('theme')==='light') document.body.classList.add('light-theme');
     document.getElementById('themeToggle').addEventListener('click', ()=>{ 
       document.body.classList.toggle('light-theme'); 
-      localStorage.setItem('theme', document.body.classList.contains('light-theme')?"light":"dark");
+      localStorage.setItem('theme', document.body.classList.contains('light-theme') ? "light" : "dark");
     });
     function initSortable(){ }
     function switchToUser(uid, email){
@@ -485,17 +754,29 @@
           if(Array.isArray(imp)){
             let user = auth.currentUser; if(!user)return;
             db.collection("users").doc(user.uid).collection("links").get().then(snap=>{
-              let b = db.batch(); snap.forEach(doc=>{ b.delete(doc.ref); }); return b.commit();
+              let b = db.batch();
+              snap.forEach(doc=>{ b.delete(doc.ref); });
+              return b.commit();
             }).then(()=>{
               let proms = imp.map(d=> db.collection("users").doc(auth.currentUser.uid).collection("links").add(d));
               return Promise.all(proms);
             }).then(()=>{ loadUserLinks(); alert("インポート成功！"); })
-            .catch(err=>{ alert("インポート失敗: "+err.message); });
+            .catch(err=>{ alert("インポート失敗: " + err.message); });
           } else { alert("形式エラー！"); }
         } catch(err){ alert("読み込み失敗！"); }
       };
       reader.readAsText(file);
     });
+    async function openAdminModal(){
+      await renderAdminData();
+      document.getElementById('modalOverlay').style.display="block";
+      document.getElementById('adminModal').style.display="block";
+    }
+    function closeAdminModal(){
+      document.getElementById('modalOverlay').style.display="none";
+      document.getElementById('adminModal').style.display="none";
+    }
   </script>
+  <input type="file" id="importInput" style="display:none" accept="application/json">
 </body>
 </html>
