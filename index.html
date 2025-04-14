@@ -21,69 +21,59 @@
     }
     body { font-family: 'Roboto', sans-serif; background-color: var(--bg-color); color: var(--text-color); margin: 0; padding: 20px; transition: background-color var(--trans-duration), color var(--trans-duration); }
     body::before { content:""; position: fixed; top:0; left:0; width:100%; height:100%; background: radial-gradient(ellipse at center, rgba(0,0,0,0.3) 0%, transparent 80%); z-index: -1; }
-    .container { max-width: 900px; margin: 40px auto; padding: 20px; background-color: var(--container-bg); border-radius: 12px; box-shadow: 0 6px 20px var(--shadow-color); display: none; position: relative; }
-    /* 顶部按钮区域（去掉标题，按钮靠右对齐，间隙较小） */
-    .top-right-buttons { position: absolute; top: 10px; right: 10px; display: flex; gap: 4px; z-index: 2; }
-    .top-right-buttons button { padding: 6px 8px; font-size: 14px; }
-    /* 工具栏 */
-    .toolbar { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 10px; }
-    .toolbar input.form-control { flex: 1; height: 40px; padding: 0 10px; border: 1px solid var(--border-color); border-radius: 6px; background-color: var(--container-bg); color: var(--text-color); transition: border-color var(--trans-duration); }
+    .container { max-width:900px; margin:60px auto; padding:60px 20px 20px; background-color: var(--container-bg); border-radius:12px; box-shadow: 0 6px 20px var(--shadow-color); display: none; position: relative; }
+    .top-right-buttons { position: absolute; top: 10px; right: 10px; display: flex; gap:4px; z-index:2; }
+    .top-right-buttons button { padding:6px 8px; font-size:14px; }
+    .toolbar { display:flex; flex-wrap:wrap; gap:10px; margin-top:50px; margin-bottom:10px; }
+    .toolbar input.form-control { flex:1; height:40px; padding:0 10px; border:1px solid var(--border-color); border-radius:6px; background-color: var(--container-bg); color: var(--text-color); transition: border-color var(--trans-duration); }
     .toolbar input.form-control:focus { border-color: var(--btn-bg); outline: none; }
-    .toolbar button { height: 40px; padding: 0 10px; border: none; border-radius: 6px; background-color: var(--btn-bg); color: #fff; cursor: pointer; font-size: 14px; transition: background-color var(--trans-duration), transform var(--trans-duration); }
+    .toolbar button { height:40px; padding:0 10px; border: none; border-radius:6px; background-color: var(--btn-bg); color:#fff; cursor: pointer; font-size:14px; transition: background-color var(--trans-duration), transform var(--trans-duration); }
     .toolbar button:hover { background-color: var(--btn-bg-hover); transform: translateY(-3px); }
-    hr { border: none; height: 1px; background-color: var(--border-color); margin: 20px 0; }
-    #tagList { margin-bottom: 10px; display: flex; flex-wrap: wrap; gap: 6px; }
-    #tagList .tag-item { background-color: var(--border-color); color: var(--text-color); padding: 4px 8px; border-radius: 4px; font-size: 14px; cursor: pointer; transition: background-color var(--trans-duration); }
+    hr { border:none; height:1px; background-color: var(--border-color); margin:20px 0; }
+    #tagList { margin-bottom:10px; display:flex; flex-wrap:wrap; gap:6px; }
+    #tagList .tag-item { background-color: var(--border-color); color: var(--text-color); padding:4px 8px; border-radius:4px; font-size:14px; cursor:pointer; transition: background-color var(--trans-duration); }
     #tagList .tag-item:hover { background-color: var(--btn-bg-hover); }
-    #tagList .tag-item.active { background-color: var(--btn-bg); color: #fff; }
-    .link-card { background-color: var(--container-bg); border: 1px solid var(--border-color); border-radius: 8px; padding: 15px; margin-bottom: 15px; box-shadow: 0 3px 10px var(--shadow-color); transition: transform var(--trans-duration); }
+    #tagList .tag-item.active { background-color: var(--btn-bg); color:#fff; }
+    .link-card { background-color: var(--container-bg); border: 1px solid var(--border-color); border-radius:8px; padding:15px; margin-bottom:15px; box-shadow: 0 3px 10px var(--shadow-color); transition: transform var(--trans-duration); }
     .link-card:hover { transform: translateY(-3px); }
-    .link-header { display: flex; align-items: center; margin-bottom: 8px; }
-    .link-icon { width: 32px; height: 32px; margin-right: 10px; border-radius: 4px; object-fit: cover; }
-    .link-info { flex: 1; }
-    .link-info a { color: var(--link-color); text-decoration: none; font-size: 20px; font-weight: 500; }
+    .link-header { display:flex; align-items:center; margin-bottom:8px; }
+    .link-icon { width:32px; height:32px; margin-right:10px; border-radius:4px; object-fit:cover; }
+    .link-info { flex:1; }
+    .link-info a { color: var(--link-color); text-decoration: none; font-size:20px; font-weight:500; }
     .link-info a:hover { text-decoration: underline; }
-    .tag { background-color: var(--border-color); color: var(--text-color); padding: 3px 8px; border-radius: 4px; font-size: 12px; margin: 2px 4px 2px 0; }
-    .btn, .btn-add { padding: 8px 12px; border: none; border-radius: 4px; background-color: var(--btn-bg); color: #fff; cursor: pointer; transition: background-color var(--trans-duration), transform var(--trans-duration); font-size: 14px; }
+    .tag { background-color: var(--border-color); color: var(--text-color); padding:3px 8px; border-radius:4px; font-size:12px; margin:2px 4px 2px 0; }
+    .btn, .btn-add { padding:8px 12px; border:none; border-radius:4px; background-color: var(--btn-bg); color:#fff; cursor:pointer; transition: background-color var(--trans-duration), transform var(--trans-duration); font-size:14px; }
     .btn:hover, .btn-add:hover { background-color: var(--btn-bg-hover); transform: translateY(-2px); }
-    .link-btn { margin-right: 8px; }
-    .edit-container { display: block; }
-    .edit-container input { width: 100%; box-sizing: border-box; margin-bottom: 8px; padding: 8px; border: 1px solid var(--border-color); border-radius: 6px; background-color: var(--container-bg); color: var(--text-color); transition: border-color var(--trans-duration); }
-    .edit-container input:focus { border-color: var(--btn-bg); outline: none; }
-    .edit-buttons { display: flex; gap: 10px; margin-top: 8px; }
-    /* 模态框 */
+    .link-btn { margin-right:8px; }
+    .edit-container { display:block; }
+    .edit-container input { width:100%; box-sizing:border-box; margin-bottom:8px; padding:8px; border:1px solid var(--border-color); border-radius:6px; background-color: var(--container-bg); color: var(--text-color); transition: border-color var(--trans-duration); }
+    .edit-container input:focus { border-color: var(--btn-bg); outline:none; }
+    .edit-buttons { display:flex; gap:10px; margin-top:8px; }
     #authModal, #addLinkModal, #adminModal {
       position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
-      background-color: var(--container-bg); border: 1px solid var(--border-color); border-radius: 8px;
-      width: 90%; max-width: 400px; padding: 20px; z-index: 2100; box-shadow: 0 6px 20px var(--shadow-color); display: none;
+      background-color: var(--container-bg); border:1px solid var(--border-color); border-radius:8px;
+      width: 90%; max-width:400px; padding:20px; z-index:2100; box-shadow: 0 6px 20px var(--shadow-color); display:none;
     }
-    #authModal h2, #addLinkModal h2, #adminModal h2 { text-align: center; margin-bottom: 20px; }
-    .modal-btns-row { display: flex; justify-content: flex-end; gap: 8px; margin-top: 10px; }
-    #modalOverlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 2050; display: none; }
-    /* 管理者表格 */
-    #adminModal table { width: 100%; border-collapse: collapse; }
-    #adminModal th, #adminModal td { padding: 6px 8px; border: 1px solid var(--border-color); font-size: 14px; line-height: 1.4; }
-    /* 显示用户邮箱 */
-    #adminModal th:nth-child(1), #adminModal td:nth-child(1) { display: table-cell; }
-    #adminModal th:nth-child(3), #adminModal td:nth-child(3) { text-align: center; }
-    #adminModal .modal-btns { text-align: right; margin-top: 20px; }
-    #adminModal .modal-btns button { margin-left: 10px; padding: 8px 12px; font-size: 14px; }
-    /* 登录等待 */
-    .spinner { border: 4px solid rgba(0,0,0,0.1); width: 24px; height: 24px; border-radius: 50%; border-left-color: var(--btn-bg); animation: spin 1s linear infinite; display: inline-block; }
-    @keyframes spin { to { transform: rotate(360deg); } }
-    /* 移动端响应 */
+    #authModal h2, #addLinkModal h2, #adminModal h2 { text-align:center; margin-bottom:20px; }
+    .modal-btns-row { display:flex; justify-content:flex-end; gap:8px; margin-top:10px; }
+    #modalOverlay { position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:2050; display:none; }
+    #adminModal table { width:100%; border-collapse:collapse; }
+    #adminModal th, #adminModal td { padding:6px 8px; border:1px solid var(--border-color); font-size:14px; line-height:1.4; }
+    /* 管理者画面：调整操作按钮布局 */
+    #adminModal td:nth-child(4) { display:flex; justify-content: space-between; align-items: center; }
+    .spinner { border:4px solid rgba(0,0,0,0.1); width:24px; height:24px; border-radius:50%; border-left-color:var(--btn-bg); animation:spin 1s linear infinite; position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); z-index:2300; }
+    @keyframes spin { to { transform:rotate(360deg); } }
     @media (max-width:600px) {
-      .container { margin: 10px; padding: 15px; }
-      .top-right-buttons { position: static; justify-content: flex-end; gap: 4px; margin-bottom: 10px; }
-      .toolbar input.form-control { height: 36px; padding: 6px; font-size: 14px; }
-      .toolbar button { height: 36px; padding: 6px 8px; font-size: 12px; }
-      .link-card { padding: 10px; }
+      .container { margin:10px; padding:15px; }
+      .top-right-buttons { position:static; justify-content:flex-end; gap:4px; margin-bottom:10px; }
+      .toolbar input.form-control { height:36px; padding:6px; font-size:14px; }
+      .toolbar button { height:36px; padding:6px 8px; font-size:12px; }
+      .link-card { padding:10px; }
       .modal-btns-row { flex-direction: column; align-items: stretch; }
-      .modal-btns-row button { width: 100%; }
+      .modal-btns-row button { width:100%; }
     }
-    /* 排序按钮样式 */
-    .order-btn { padding: 4px 6px; font-size: 12px; border: none; background-color: var(--btn-bg); color: #fff; border-radius: 4px; cursor: pointer; transition: background-color var(--trans-duration); }
-    .order-btn:hover { background-color: var(--btn-bg-hover); }
+    .order-btn { padding:4px 6px; font-size:12px; border:none; background-color:var(--btn-bg); color:#fff; border-radius:4px; cursor:pointer; transition:background-color var(--trans-duration); }
+    .order-btn:hover { background-color:var(--btn-bg-hover); }
   </style>
 </head>
 <body>
@@ -154,7 +144,7 @@
       <button class="btn" onclick="closeAdminModal()">閉じる</button>
     </div>
   </div>
-  <div id="opSpinner" class="spinner" style="display:none; position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); z-index:2300;"></div>
+  <div id="opSpinner" class="spinner" style="display:none;"></div>
   <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
   <script>
     var firebaseConfig = {
@@ -247,27 +237,17 @@
       let a = document.createElement('a'); a.href = link.url; a.textContent = link.name; a.target = '_blank';
       info.appendChild(a);
       if(link.tags && link.tags.length){
-        link.tags.forEach(t=>{
-          let sp = document.createElement('span'); sp.className = 'tag'; sp.textContent = t;
-          info.appendChild(sp);
-        });
+        link.tags.forEach(t=>{ let sp = document.createElement('span'); sp.className = 'tag'; sp.textContent = t; info.appendChild(sp); });
       }
       header.appendChild(info); card.appendChild(header);
-      let orderDiv = document.createElement('div');
-      orderDiv.style.display = "flex"; orderDiv.style.flexDirection = "column";
-      orderDiv.style.justifyContent = "center"; orderDiv.style.gap = "2px";
-      let upBtn = document.createElement('button'); upBtn.className = "order-btn"; upBtn.textContent = "▲";
-      upBtn.onclick = ()=>{ moveLink(idx, -1); };
-      let downBtn = document.createElement('button'); downBtn.className = "order-btn"; downBtn.textContent = "▼";
-      downBtn.onclick = ()=>{ moveLink(idx, 1); };
+      let orderDiv = document.createElement('div'); orderDiv.style.display = "flex"; orderDiv.style.flexDirection = "column"; orderDiv.style.justifyContent = "center"; orderDiv.style.gap = "2px";
+      let upBtn = document.createElement('button'); upBtn.className = "order-btn"; upBtn.textContent = "▲"; upBtn.onclick = ()=>{ moveLink(idx, -1); };
+      let downBtn = document.createElement('button'); downBtn.className = "order-btn"; downBtn.textContent = "▼"; downBtn.onclick = ()=>{ moveLink(idx, 1); };
       orderDiv.appendChild(upBtn); orderDiv.appendChild(downBtn);
-      let actionDiv = document.createElement('div');
-      actionDiv.style.display = "flex"; actionDiv.style.justifyContent = "space-between"; actionDiv.style.alignItems = "center"; actionDiv.style.marginTop = "10px";
+      let actionDiv = document.createElement('div'); actionDiv.style.display = "flex"; actionDiv.style.justifyContent = "space-between"; actionDiv.style.alignItems = "center"; actionDiv.style.marginTop = "10px";
       let btnDiv = document.createElement('div'); btnDiv.style.display = "flex"; btnDiv.style.gap = "10px";
-      let editBtn = document.createElement('button'); editBtn.className = "btn link-btn"; editBtn.textContent = "編集";
-      editBtn.onclick = ()=>{ enterEditMode(card, link, idx); };
-      let delBtn = document.createElement('button'); delBtn.className = "btn"; delBtn.textContent = "削除";
-      delBtn.onclick = ()=>{ if(confirm("削除しますか？")) deleteLinkFromFirestore(link.id); };
+      let editBtn = document.createElement('button'); editBtn.className = "btn link-btn"; editBtn.textContent = "編集"; editBtn.onclick = ()=>{ enterEditMode(card, link, idx); };
+      let delBtn = document.createElement('button'); delBtn.className = "btn"; delBtn.textContent = "削除"; delBtn.onclick = ()=>{ if(confirm("削除しますか？")) deleteLinkFromFirestore(link.id); };
       btnDiv.appendChild(editBtn); btnDiv.appendChild(delBtn);
       actionDiv.appendChild(btnDiv); actionDiv.appendChild(orderDiv);
       card.appendChild(actionDiv);
@@ -289,10 +269,8 @@
       let container = document.createElement('div'); container.className = 'edit-container';
       let nameIn = document.createElement('input'); nameIn.value = link.name; nameIn.placeholder = "リンク名";
       let urlIn = document.createElement('input'); urlIn.value = link.url; urlIn.placeholder = "URL (http:// または https://)";
-      let tagsIn = document.createElement('input'); tagsIn.value = link.tags ? link.tags.join(', ') : ""; tagsIn.placeholder = "タグ (カンマ区切り)";
-      container.appendChild(nameIn);
-      container.appendChild(urlIn);
-      container.appendChild(tagsIn);
+      let tagsIn = document.createElement('input'); tagsIn.value = link.tags ? link.tags.join(',') : ""; tagsIn.placeholder = "タグ (カンマ区切り)";
+      container.appendChild(nameIn); container.appendChild(urlIn); container.appendChild(tagsIn);
       card.appendChild(container);
       let btnDiv = document.createElement('div'); btnDiv.className = 'edit-buttons';
       let saveBtn = document.createElement('button'); saveBtn.className = 'btn'; saveBtn.textContent = "保存";
@@ -303,8 +281,7 @@
       };
       let cancelBtn = document.createElement('button'); cancelBtn.className = 'btn'; cancelBtn.textContent = "キャンセル";
       cancelBtn.onclick = ()=>{ loadUserLinks(); };
-      btnDiv.appendChild(saveBtn);
-      btnDiv.appendChild(cancelBtn);
+      btnDiv.appendChild(saveBtn); btnDiv.appendChild(cancelBtn);
       card.appendChild(btnDiv);
     }
     function renderLinks(filtered=null){
@@ -328,7 +305,7 @@
     }
     document.getElementById('searchInput').addEventListener('input', function(){
       let q = this.value.trim().toLowerCase(), filtered = links.filter(l=> 
-        l.name.toLowerCase().includes(q) || l.url.toLowerCase().includes(q) || (l.tags && l.tags.some(t=> t.toLowerCase().includes(q)))
+        l.name.toLowerCase().includes(q) || l.url.toLowerCase().includes(q) || (l.tags && l.tags.some(t=>t.toLowerCase().includes(q)))
       );
       renderLinks(filtered); renderTagList();
     });
@@ -378,7 +355,9 @@
           if(Array.isArray(imp)){
             let user = auth.currentUser; if(!user)return;
             db.collection("users").doc(user.uid).collection("links").get().then(snap=>{
-              let b = db.batch(); snap.forEach(doc=>{ b.delete(doc.ref); }); return b.commit();
+              let b = db.batch();
+              snap.forEach(doc=>{ b.delete(doc.ref); });
+              return b.commit();
             }).then(()=>{
               let proms = imp.map(d=> db.collection("users").doc(auth.currentUser.uid).collection("links").add(d));
               return Promise.all(proms);
@@ -413,9 +392,9 @@
           let d = doc.data(), row = document.createElement("tr");
           let tdEmail = document.createElement("td"); tdEmail.textContent = d.email || ""; row.appendChild(tdEmail);
           let tdLogin = document.createElement("td"); tdLogin.textContent = formatLoginTime(d.lastLogin || ""); row.appendChild(tdLogin);
-          let tdAdmin = document.createElement("td"); tdAdmin.style.textAlign = "center";
-          tdAdmin.textContent = d.isAdmin ? "〇" : "×"; row.appendChild(tdAdmin);
-          let tdAct = document.createElement("td"); tdAct.style.display = "flex"; tdAct.style.justifyContent = "space-between";
+          let tdAdmin = document.createElement("td"); tdAdmin.style.textAlign = "center"; tdAdmin.textContent = d.isAdmin ? "〇" : "×"; row.appendChild(tdAdmin);
+          let tdAct = document.createElement("td");
+          tdAct.style.display = "flex"; tdAct.style.justifyContent = "space-between";
           let leftDiv = document.createElement("div"); leftDiv.style.flex = "1";
           let btnModify = document.createElement("button"); btnModify.className="btn"; btnModify.style.marginRight = "4px"; btnModify.textContent="変更";
           btnModify.onclick = ()=>{ modifyUserEmail(doc.id); };
@@ -445,6 +424,14 @@
         a.href = url; a.download = "all_users_links.json"; a.click(); URL.revokeObjectURL(url);
       } catch(err){ alert("全ユーザーエクスポート失敗: "+err.message); }
     }
+    async function exportUserLinks(uid){
+      try{
+        let snap = await db.collection("users").doc(uid).collection("links").get(), arr = [];
+        snap.forEach(doc=>{ let d = doc.data(); d.id = doc.id; arr.push(d); });
+        let s = JSON.stringify(arr,null,2), blob = new Blob([s], {type:"application/json"}), url = URL.createObjectURL(blob), a = document.createElement("a");
+        a.href = url; a.download = "user_links_"+uid+".json"; a.click(); URL.revokeObjectURL(url);
+      } catch(err){ alert("ユーザーリンクエクスポート失敗: "+err.message); }
+    }
     async function modifyUserEmail(uid){
       let newEmail = prompt("新しいメールアドレスを入力してください:");
       if(!newEmail)return;
@@ -467,7 +454,7 @@
       document.body.classList.toggle('light-theme'); 
       localStorage.setItem('theme', document.body.classList.contains('light-theme')?"light":"dark");
     });
-    function initSortable(){ }
+    function initSortable(){}
     document.getElementById('importInput').addEventListener('change', function(e){
       let file = e.target.files[0], reader = new FileReader();
       reader.onload = function(ev){
