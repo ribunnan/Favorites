@@ -20,27 +20,29 @@
       --link-color: #1a73e8; --btn-bg: #1a73e8; --btn-bg-hover: #1558b0; --shadow-color: rgba(0,0,0,0.1);
     }
     body { font-family: 'Roboto', sans-serif; background-color: var(--bg-color); color: var(--text-color); margin: 0; padding: 20px; transition: background-color var(--trans-duration), color var(--trans-duration); }
-    body::before { content:""; position: fixed; top:0; left:0; width:100%; height:100%; background: radial-gradient(ellipse at center, rgba(0,0,0,0.3) 0%, transparent 80%); z-index: -1; }
-    .container { max-width:900px; margin:60px auto; padding:60px 20px 20px; background-color: var(--container-bg); border-radius:12px; box-shadow: 0 6px 20px var(--shadow-color); display: none; position: relative; }
-    .top-right-buttons { position: absolute; top: 10px; right: 10px; display: flex; gap:4px; z-index:2; }
+    body::before { content:""; position:fixed; top:0; left:0; width:100%; height:100%; background: radial-gradient(ellipse at center, rgba(0,0,0,0.3) 0%, transparent 80%); z-index:-1; }
+    .container { max-width:900px; margin:60px auto 40px; padding:50px 20px 20px; background-color: var(--container-bg); border-radius:12px; box-shadow: 0 6px 20px var(--shadow-color); display:none; position:relative; }
+    /* 顶部区域：左上显示当前切换用户邮箱（如果有），右上为管理与ログアウト按钮 */
+    #viewUserDisplay { position: absolute; top:10px; left:10px; font-size:14px; color: var(--link-color); display:none; }
+    .top-right-buttons { position: absolute; top:10px; right:10px; display: flex; gap:4px; z-index:2; }
     .top-right-buttons button { padding:6px 8px; font-size:14px; }
-    .toolbar { display:flex; flex-wrap:wrap; gap:10px; margin-top:50px; margin-bottom:10px; }
+    .toolbar { display:flex; flex-wrap:wrap; gap:10px; margin-top:60px; margin-bottom:10px; }
     .toolbar input.form-control { flex:1; height:40px; padding:0 10px; border:1px solid var(--border-color); border-radius:6px; background-color: var(--container-bg); color: var(--text-color); transition: border-color var(--trans-duration); }
-    .toolbar input.form-control:focus { border-color: var(--btn-bg); outline: none; }
-    .toolbar button { height:40px; padding:0 10px; border: none; border-radius:6px; background-color: var(--btn-bg); color:#fff; cursor: pointer; font-size:14px; transition: background-color var(--trans-duration), transform var(--trans-duration); }
+    .toolbar input.form-control:focus { border-color: var(--btn-bg); outline:none; }
+    .toolbar button { height:40px; padding:0 10px; border:none; border-radius:6px; background-color: var(--btn-bg); color:#fff; cursor:pointer; font-size:14px; transition: background-color var(--trans-duration), transform var(--trans-duration); }
     .toolbar button:hover { background-color: var(--btn-bg-hover); transform: translateY(-3px); }
     hr { border:none; height:1px; background-color: var(--border-color); margin:20px 0; }
     #tagList { margin-bottom:10px; display:flex; flex-wrap:wrap; gap:6px; }
     #tagList .tag-item { background-color: var(--border-color); color: var(--text-color); padding:4px 8px; border-radius:4px; font-size:14px; cursor:pointer; transition: background-color var(--trans-duration); }
     #tagList .tag-item:hover { background-color: var(--btn-bg-hover); }
     #tagList .tag-item.active { background-color: var(--btn-bg); color:#fff; }
-    .link-card { background-color: var(--container-bg); border: 1px solid var(--border-color); border-radius:8px; padding:15px; margin-bottom:15px; box-shadow: 0 3px 10px var(--shadow-color); transition: transform var(--trans-duration); }
+    .link-card { background-color: var(--container-bg); border:1px solid var(--border-color); border-radius:8px; padding:15px; margin-bottom:15px; box-shadow: 0 3px 10px var(--shadow-color); transition: transform var(--trans-duration); }
     .link-card:hover { transform: translateY(-3px); }
     .link-header { display:flex; align-items:center; margin-bottom:8px; }
     .link-icon { width:32px; height:32px; margin-right:10px; border-radius:4px; object-fit:cover; }
     .link-info { flex:1; }
-    .link-info a { color: var(--link-color); text-decoration: none; font-size:20px; font-weight:500; }
-    .link-info a:hover { text-decoration: underline; }
+    .link-info a { color: var(--link-color); text-decoration:none; font-size:20px; font-weight:500; }
+    .link-info a:hover { text-decoration:underline; }
     .tag { background-color: var(--border-color); color: var(--text-color); padding:3px 8px; border-radius:4px; font-size:12px; margin:2px 4px 2px 0; }
     .btn, .btn-add { padding:8px 12px; border:none; border-radius:4px; background-color: var(--btn-bg); color:#fff; cursor:pointer; transition: background-color var(--trans-duration), transform var(--trans-duration); font-size:14px; }
     .btn:hover, .btn-add:hover { background-color: var(--btn-bg-hover); transform: translateY(-2px); }
@@ -49,27 +51,28 @@
     .edit-container input { width:100%; box-sizing:border-box; margin-bottom:8px; padding:8px; border:1px solid var(--border-color); border-radius:6px; background-color: var(--container-bg); color: var(--text-color); transition: border-color var(--trans-duration); }
     .edit-container input:focus { border-color: var(--btn-bg); outline:none; }
     .edit-buttons { display:flex; gap:10px; margin-top:8px; }
-    #authModal, #addLinkModal, #adminModal {
-      position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
-      background-color: var(--container-bg); border:1px solid var(--border-color); border-radius:8px;
-      width: 90%; max-width:400px; padding:20px; z-index:2100; box-shadow: 0 6px 20px var(--shadow-color); display:none;
-    }
+    /* 模态框样式 */
+    #authModal, #addLinkModal, #adminModal { position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); background-color: var(--container-bg); border:1px solid var(--border-color); border-radius:8px; width:90%; max-width:400px; padding:20px; z-index:2100; box-shadow: 0 6px 20px var(--shadow-color); display:none; }
     #authModal h2, #addLinkModal h2, #adminModal h2 { text-align:center; margin-bottom:20px; }
     .modal-btns-row { display:flex; justify-content:flex-end; gap:8px; margin-top:10px; }
     #modalOverlay { position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:2050; display:none; }
+    /* 管理画面表格 */
     #adminModal table { width:100%; border-collapse:collapse; }
     #adminModal th, #adminModal td { padding:6px 8px; border:1px solid var(--border-color); font-size:14px; line-height:1.4; }
-    /* 管理者画面：调整操作按钮布局 */
-    #adminModal td:nth-child(4) { display:flex; justify-content: space-between; align-items: center; }
+    /* 操作按钮分左右对齐 */
+    #adminModal td:nth-child(4) { display:flex; justify-content:space-between; align-items:center; }
+    #adminModal td:nth-child(4) > div { flex:1; }
+    /* Spinner 固定中间 */
     .spinner { border:4px solid rgba(0,0,0,0.1); width:24px; height:24px; border-radius:50%; border-left-color:var(--btn-bg); animation:spin 1s linear infinite; position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); z-index:2300; }
     @keyframes spin { to { transform:rotate(360deg); } }
+    /* 移动端响应 */
     @media (max-width:600px) {
       .container { margin:10px; padding:15px; }
       .top-right-buttons { position:static; justify-content:flex-end; gap:4px; margin-bottom:10px; }
       .toolbar input.form-control { height:36px; padding:6px; font-size:14px; }
       .toolbar button { height:36px; padding:6px 8px; font-size:12px; }
       .link-card { padding:10px; }
-      .modal-btns-row { flex-direction: column; align-items: stretch; }
+      .modal-btns-row { flex-direction:column; align-items:stretch; }
       .modal-btns-row button { width:100%; }
     }
     .order-btn { padding:4px 6px; font-size:12px; border:none; background-color:var(--btn-bg); color:#fff; border-radius:4px; cursor:pointer; transition:background-color var(--trans-duration); }
@@ -101,6 +104,7 @@
   </div>
   <div id="modalOverlay"></div>
   <div class="container" id="mainContent">
+    <div id="viewUserDisplay" style="position:absolute; top:10px; left:10px; font-size:14px; color:var(--link-color); display:none;"></div>
     <div class="top-right-buttons">
       <button id="adminBtn" onclick="openAdminModal()" style="display:none;">管理</button>
       <button onclick="confirmLogout()">ログアウト</button>
@@ -158,13 +162,15 @@
     firebase.initializeApp(firebaseConfig);
     firebase.auth().setPersistence(firebase.auth.Auth.Persistence.LOCAL);
     const db = firebase.firestore(), auth = firebase.auth();
-    let links = [];
+    let links = [], viewingUser = null;
     function getFaviconUrl(url){ try{ return new URL(url).origin+'/favicon.ico'; }catch(e){ return ""; } }
     function showOpSpinner(){ document.getElementById('opSpinner').style.display = 'block'; }
     function hideOpSpinner(){ document.getElementById('opSpinner').style.display = 'none'; }
+    function getCurrentUID(){ return viewingUser ? viewingUser.uid : auth.currentUser.uid; }
     auth.onAuthStateChanged(async user=>{
       if(user){
-        await updateUserProfile(user); loadUserLinks();
+        await updateUserProfile(user);
+        loadUserLinks();
         document.getElementById("authModal").style.display="none";
         document.getElementById("modalOverlay").style.display="none";
         document.getElementById("mainContent").style.display="block";
@@ -197,8 +203,8 @@
     function confirmLogout(){ if(confirm("ログアウトしますか？")) logout(); }
     function logout(){ auth.signOut().catch(error=>{ alert("ログアウトエラー: "+error.message); }); }
     function loadUserLinks(){
-      let user = auth.currentUser; if(!user)return;
-      db.collection("users").doc(user.uid).collection("links").orderBy('order').get()
+      let uid = getCurrentUID();
+      db.collection("users").doc(uid).collection("links").orderBy('order').get()
         .then(snap=>{
           links = []; snap.forEach(doc=>{ let d = doc.data(); d.id = doc.id; links.push(d); });
           renderLinks(); renderTagList();
@@ -206,24 +212,21 @@
         .catch(err=>{ console.error("読み込み失敗:",err); });
     }
     function addLinkToFirestore(data){
-      let user = auth.currentUser; if(!user)return;
       data.order = Date.now();
       showOpSpinner();
-      db.collection("users").doc(user.uid).collection("links").add(data)
+      db.collection("users").doc(getCurrentUID()).collection("links").add(data)
         .then(()=>{ hideOpSpinner(); loadUserLinks(); closeAddModal(); })
         .catch(err=>{ hideOpSpinner(); alert("追加失敗: "+err.message); });
     }
     function updateLinkInFirestore(id, data){
-      let user = auth.currentUser; if(!user)return;
       showOpSpinner();
-      db.collection("users").doc(user.uid).collection("links").doc(id).update(data)
+      db.collection("users").doc(getCurrentUID()).collection("links").doc(id).update(data)
         .then(()=>{ hideOpSpinner(); loadUserLinks(); })
         .catch(err=>{ hideOpSpinner(); alert("更新失敗: "+err.message); });
     }
     function deleteLinkFromFirestore(id){
-      let user = auth.currentUser; if(!user)return;
       showOpSpinner();
-      db.collection("users").doc(user.uid).collection("links").doc(id).delete()
+      db.collection("users").doc(getCurrentUID()).collection("links").doc(id).delete()
         .then(()=>{ hideOpSpinner(); loadUserLinks(); })
         .catch(err=>{ hideOpSpinner(); alert("削除失敗: "+err.message); });
     }
@@ -237,14 +240,20 @@
       let a = document.createElement('a'); a.href = link.url; a.textContent = link.name; a.target = '_blank';
       info.appendChild(a);
       if(link.tags && link.tags.length){
-        link.tags.forEach(t=>{ let sp = document.createElement('span'); sp.className = 'tag'; sp.textContent = t; info.appendChild(sp); });
+        link.tags.forEach(t=>{
+          let sp = document.createElement('span'); sp.className = 'tag'; sp.textContent = t;
+          info.appendChild(sp);
+        });
       }
       header.appendChild(info); card.appendChild(header);
-      let orderDiv = document.createElement('div'); orderDiv.style.display = "flex"; orderDiv.style.flexDirection = "column"; orderDiv.style.justifyContent = "center"; orderDiv.style.gap = "2px";
+      let orderDiv = document.createElement('div');
+      orderDiv.style.display = "flex"; orderDiv.style.flexDirection = "column";
+      orderDiv.style.justifyContent = "center"; orderDiv.style.gap = "2px";
       let upBtn = document.createElement('button'); upBtn.className = "order-btn"; upBtn.textContent = "▲"; upBtn.onclick = ()=>{ moveLink(idx, -1); };
       let downBtn = document.createElement('button'); downBtn.className = "order-btn"; downBtn.textContent = "▼"; downBtn.onclick = ()=>{ moveLink(idx, 1); };
       orderDiv.appendChild(upBtn); orderDiv.appendChild(downBtn);
-      let actionDiv = document.createElement('div'); actionDiv.style.display = "flex"; actionDiv.style.justifyContent = "space-between"; actionDiv.style.alignItems = "center"; actionDiv.style.marginTop = "10px";
+      let actionDiv = document.createElement('div');
+      actionDiv.style.display = "flex"; actionDiv.style.justifyContent = "space-between"; actionDiv.style.alignItems = "center"; actionDiv.style.marginTop = "10px";
       let btnDiv = document.createElement('div'); btnDiv.style.display = "flex"; btnDiv.style.gap = "10px";
       let editBtn = document.createElement('button'); editBtn.className = "btn link-btn"; editBtn.textContent = "編集"; editBtn.onclick = ()=>{ enterEditMode(card, link, idx); };
       let delBtn = document.createElement('button'); delBtn.className = "btn"; delBtn.textContent = "削除"; delBtn.onclick = ()=>{ if(confirm("削除しますか？")) deleteLinkFromFirestore(link.id); };
@@ -256,10 +265,9 @@
     function moveLink(idx, offset){
       let newIdx = idx + offset; if(newIdx < 0 || newIdx >= links.length) return;
       let temp = links[idx].order; links[idx].order = links[newIdx].order; links[newIdx].order = temp;
-      let user = auth.currentUser; if(!user)return;
-      let batch = db.batch();
-      let ref1 = db.collection("users").doc(user.uid).collection("links").doc(links[idx].id);
-      let ref2 = db.collection("users").doc(user.uid).collection("links").doc(links[newIdx].id);
+      let batch = db.batch(), uid = getCurrentUID();
+      let ref1 = db.collection("users").doc(uid).collection("links").doc(links[idx].id);
+      let ref2 = db.collection("users").doc(uid).collection("links").doc(links[newIdx].id);
       batch.update(ref1, { order: links[idx].order });
       batch.update(ref2, { order: links[newIdx].order });
       batch.commit().then(()=>{ loadUserLinks(); }).catch(e=>{ alert("並び替え失敗: "+e.message); });
@@ -355,9 +363,7 @@
           if(Array.isArray(imp)){
             let user = auth.currentUser; if(!user)return;
             db.collection("users").doc(user.uid).collection("links").get().then(snap=>{
-              let b = db.batch();
-              snap.forEach(doc=>{ b.delete(doc.ref); });
-              return b.commit();
+              let b = db.batch(); snap.forEach(doc=>{ b.delete(doc.ref); }); return b.commit();
             }).then(()=>{
               let proms = imp.map(d=> db.collection("users").doc(auth.currentUser.uid).collection("links").add(d));
               return Promise.all(proms);
@@ -396,15 +402,17 @@
           let tdAct = document.createElement("td");
           tdAct.style.display = "flex"; tdAct.style.justifyContent = "space-between";
           let leftDiv = document.createElement("div"); leftDiv.style.flex = "1";
-          let btnModify = document.createElement("button"); btnModify.className="btn"; btnModify.style.marginRight = "4px"; btnModify.textContent="変更";
+          let btnModify = document.createElement("button"); btnModify.className="btn"; btnModify.style.marginRight="4px"; btnModify.textContent="変更";
           btnModify.onclick = ()=>{ modifyUserEmail(doc.id); };
           leftDiv.appendChild(btnModify);
           let rightDiv = document.createElement("div"); rightDiv.style.flex = "1"; rightDiv.style.textAlign = "right";
-          let btnDelete = document.createElement("button"); btnDelete.className="btn"; btnDelete.style.marginRight = "4px"; btnDelete.textContent="削除";
+          let btnDelete = document.createElement("button"); btnDelete.className="btn"; btnDelete.style.marginRight="4px"; btnDelete.textContent="削除";
           btnDelete.onclick = ()=>{ deleteUserAccount(doc.id); };
+          let btnSwitch = document.createElement("button"); btnSwitch.className="btn"; btnSwitch.style.marginRight="4px"; btnSwitch.textContent="切替";
+          btnSwitch.onclick = ()=>{ switchToUser(doc.id, d.email); };
           let btnExport = document.createElement("button"); btnExport.className="btn"; btnExport.textContent="エクスポート";
           btnExport.onclick = ()=>{ exportUserLinks(doc.id); };
-          rightDiv.appendChild(btnDelete); rightDiv.appendChild(btnExport);
+          rightDiv.appendChild(btnDelete); rightDiv.appendChild(btnSwitch); rightDiv.appendChild(btnExport);
           tdAct.appendChild(leftDiv); tdAct.appendChild(rightDiv);
           row.appendChild(tdAct);
           table.appendChild(row);
@@ -419,18 +427,19 @@
           ls.forEach(l=>{ let d = l.data(); d.id = l.id; arr.push(d); });
           allData[doc.id] = { user: doc.data(), links: arr };
         }
-        let s = JSON.stringify(allData,null,2), blob = new Blob([s], { type:"application/json" }),
-            url = URL.createObjectURL(blob), a = document.createElement("a");
+        let s = JSON.stringify(allData,null,2), blob = new Blob([s],{type:"application/json"});
+        let url = URL.createObjectURL(blob), a = document.createElement("a");
         a.href = url; a.download = "all_users_links.json"; a.click(); URL.revokeObjectURL(url);
-      } catch(err){ alert("全ユーザーエクスポート失敗: "+err.message); }
+      }catch(err){ alert("全ユーザーエクスポート失敗: "+err.message); }
     }
     async function exportUserLinks(uid){
       try{
         let snap = await db.collection("users").doc(uid).collection("links").get(), arr = [];
         snap.forEach(doc=>{ let d = doc.data(); d.id = doc.id; arr.push(d); });
-        let s = JSON.stringify(arr,null,2), blob = new Blob([s], {type:"application/json"}), url = URL.createObjectURL(blob), a = document.createElement("a");
+        let s = JSON.stringify(arr,null,2), blob = new Blob([s],{type:"application/json"});
+        let url = URL.createObjectURL(blob), a = document.createElement("a");
         a.href = url; a.download = "user_links_"+uid+".json"; a.click(); URL.revokeObjectURL(url);
-      } catch(err){ alert("ユーザーリンクエクスポート失敗: "+err.message); }
+      }catch(err){ alert("ユーザーリンクエクスポート失敗: "+err.message); }
     }
     async function modifyUserEmail(uid){
       let newEmail = prompt("新しいメールアドレスを入力してください:");
@@ -447,14 +456,25 @@
         await batch.commit();
         await db.collection("users").doc(uid).delete();
         alert("削除完了。"); renderAdminData();
-      } catch(err){ alert("削除失敗: "+err.message); }
+      }catch(err){ alert("削除失敗: "+err.message); }
     }
     if(localStorage.getItem('theme')==='light') document.body.classList.add('light-theme');
     document.getElementById('themeToggle').addEventListener('click', ()=>{ 
       document.body.classList.toggle('light-theme'); 
       localStorage.setItem('theme', document.body.classList.contains('light-theme')?"light":"dark");
     });
-    function initSortable(){}
+    function initSortable(){ }
+    function switchToUser(uid, email){
+      viewingUser = { uid:uid, email:email };
+      document.getElementById("viewUserDisplay").style.display = "block";
+      document.getElementById("viewUserDisplay").innerHTML = "閲覧中: " + email + " <button class='btn' style='padding:4px 6px; font-size:12px;' onclick='exitSwitch()'>戻る</button>";
+      loadUserLinks();
+    }
+    function exitSwitch(){
+      viewingUser = null;
+      document.getElementById("viewUserDisplay").style.display = "none";
+      loadUserLinks();
+    }
     document.getElementById('importInput').addEventListener('change', function(e){
       let file = e.target.files[0], reader = new FileReader();
       reader.onload = function(ev){
